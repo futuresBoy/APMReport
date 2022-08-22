@@ -128,16 +128,18 @@ extern "C"
 	APM_REPORT_API int AddPerformanceInfo(const char* msg);
 
 	/*
-	设置内部的RSA加密密钥
-	返回值：0 成功，-1 参数异常
+		功能：设置RSA公钥
+		参数：pubKeyID 公钥编号
+		参数：pubKey 公钥字符串
+		返回值：0 成功，-1 参数不正确
 	*/
-	APM_REPORT_API int SetRSAKey(const char* msg);
+	APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey);
 
 	/*
-	压缩和加密
-	返回值：0 成功，-1 参数异常
+		功能：压缩和加密
+		功能：返回值：0 成功，-1 参数异常
 	*/
-	APM_REPORT_API int ZipAndEncrypt(const char* msg);
+	APM_REPORT_API const char* CompressEncrypt(const char* msg);
 }
 
 #endif

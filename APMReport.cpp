@@ -2,10 +2,15 @@
 //
 
 #include <iostream>
+#include "APMReportEngine/APMReport.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+	std::cout << "Hello World!\n";
+
+	auto c = CompressEncrypt("abcd");
+	std::cout << c;
+	std::cout << "----------end!\n";
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

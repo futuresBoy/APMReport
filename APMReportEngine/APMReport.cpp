@@ -2,7 +2,7 @@
 #include "ReportManager.h"
 #include "Logger.h"
 #include "json/json.h"
-
+#include "Util.h"
 
 APM_REPORT_API int APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostClientInfoFunc funcPostClientInfo, PostErrorInfoFunc funcPostErrorInfo, PostPerformanceInfoFunc funcPerformanceInfo, LogFunc funcLog)
 {
@@ -57,3 +57,17 @@ APM_REPORT_API int AddPerformanceInfo(const char* json)
 {
 	return 0;
 }
+
+APM_REPORT_API int SetRSAPubKey(const char* pubKeyID,const char* pubKey)
+{
+	return APMReport::SetRSAKey(pubKeyID, pubKey);
+}
+
+APM_REPORT_API const char* CompressEncrypt(const char* msg)
+{
+	char* p=nullptr;
+	int i = 0;
+	APMReport::AesEncrypt(msg, p, i);
+	return "";
+}
+

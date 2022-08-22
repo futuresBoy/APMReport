@@ -4,11 +4,11 @@
 
 namespace APMReport
 {
-	static TaskManager manager;
+	static TaskManager g_manager;
 
 	TaskManager& APMReport::TaskManager::GetInstance()
 	{
-		return manager;
+		return g_manager;
 	}
 
 	APMReport::TaskManager::~TaskManager()

@@ -149,6 +149,11 @@
   <ItemGroup>
     <ClCompile Include="APMReport.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="APMReportEngine\APMReportEngine.vcxproj">
+      <Project>{b719c1c8-6ef6-4a0c-96bc-26c79ebb38b3}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
