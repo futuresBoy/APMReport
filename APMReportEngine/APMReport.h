@@ -19,16 +19,6 @@ extern "C"
 		LOG_FATAL = 4
 	};
 
-	//采集数据类型
-	typedef enum DataCategory
-	{
-		NONE = 0,
-		//性能数据
-		PERFORMANCE = 1,
-		//异常数据
-		ERROR = 2
-	};
-
 	//采集模块
 	typedef enum DataModule
 	{
@@ -75,8 +65,8 @@ extern "C"
 	typedef void (*LogFunc)(const char* logInfo, LogLevel logLevel);
 
 	/*
-	发送模块初始化
-	返回值：0 成功，1 开关函数为空，2 阈值配置函数为空，3 上传基础信息函数为空，4 上传错误信息函数为空，5 上传性能信息函数为空
+		发送模块初始化
+		返回值：0 成功，1 开关函数为空，2 阈值配置函数为空，3 上传基础信息函数为空，4 上传错误信息函数为空，5 上传性能信息函数为空
 	*/
 	APM_REPORT_API int APMInit(
 		GetSwitchFunc funcGetSwitch,			//通知获取开关
@@ -88,8 +78,8 @@ extern "C"
 	);
 
 	/*
-	赋值客户端基础信息
-	返回值：0 成功，-1 参数异常，-2 参数不完整
+		设置客户端基础信息
+		返回值：0 成功，-1 参数异常，-2 参数不完整
 	*/
 	APM_REPORT_API int SetClientInfo(
 		const char* appID,			//appID
@@ -99,33 +89,60 @@ extern "C"
 		const char* deviceModel		//设备型号
 	);
 
+	/*
+		构建客户端基础信息
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
+		参数：UUID 通用唯一识别码，通常为Mac地址
+		参数：baseInfo 基础信息（json格式）：
+			{
+			"a_bundle_id": "程序进程名",
+			"a_ver_app": "程序版本号",
+			"d_os": "设备系统",
+			"d_model": "设备型号",
+			"d_ver": "设备系统版本",
+			"s_ver": ""
+			}
+		参数：outJosn 输出组装好的设备基础信息
+		参数：outLen 输出的设备基础信息字符串长度
+		返回值：0 成功，-1 参数异常，-2 参数不完整
+	*/
+	APM_REPORT_API int BuildClientInfo(const char* appID,const char* UUID,const char* baseInfo,char* outJosn,int& outLen);
 
 	/*
-	设置开关
-	返回值：0 成功，-1 参数异常
+		设置开关
+		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int SetReportSwitch(const char* json);
 
 
 	/*
-	设置阈值配置
-	返回值：0 成功，-1 参数异常
+		设置阈值配置
+		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int SetReportConfig(const char* json);
 
 
 	/*
-	记录异常信息
-	返回值：0 成功，-1 参数异常
+		记录异常信息
+		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int AddErrorInfo(const char* msg);
 
 
 	/*
-	记录性能信息
-	返回值：0 成功，-1 参数异常
+		记录性能信息
+		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int AddPerformanceInfo(const char* msg);
+
+	/*
+		功能：构建服务端需要的性能数据体（加密+压缩）
+		参数：msg 性能指标数据
+		参数：outText 组装好的数据体
+		参数：outLen 组装好的数据长度
+		返回值：0 成功，-1 失败
+	*/
+	APM_REPORT_API int BuildPerformanceInfo(const char* msg, char* outText, int& outLen);
 
 	/*
 		功能：设置RSA公钥
@@ -135,11 +152,6 @@ extern "C"
 	*/
 	APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey);
 
-	/*
-		功能：压缩和加密
-		功能：返回值：0 成功，-1 参数异常
-	*/
-	APM_REPORT_API const char* CompressEncrypt(const char* msg);
 }
 
 #endif

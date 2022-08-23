@@ -4,7 +4,6 @@
 #include "json/json.h"
 #include "APMReport.h"
 
-#define SDKVERSION "1.0.0"
 
 namespace APMReport
 {
@@ -99,22 +98,5 @@ namespace APMReport
 		std::recursive_mutex m_configMutex;
 	};
 
-
-	//客户端基础信息
-	class ClientBaseInfo
-	{
-	public:
-		std::string m_strAppID;
-		std::string m_strAppVersion;
-		std::string m_strOS;
-		std::string m_strOSVersion;
-		std::string m_strDeviceModel;
-	};
-
-	class ClientInfo :ClientBaseInfo
-	{
-	public:
-		std::string m_strSDKVersion = SDKVERSION;
-	};
 
 }
