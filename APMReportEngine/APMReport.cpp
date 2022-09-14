@@ -8,8 +8,9 @@
 
 //缓存设备基础数据的MD5信息
 std::string g_baseMD5Info;
+std::string g_appID;
 
-APM_REPORT_API int APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostClientInfoFunc funcPostClientInfo, PostErrorInfoFunc funcPostErrorInfo, PostPerformanceInfoFunc funcPerformanceInfo, LogFunc funcLog)
+APM_REPORT_API int APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
 {
 	InitLog(funcLog);
 	if (nullptr == funcGetSwitch)
@@ -20,33 +21,21 @@ APM_REPORT_API int APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetCon
 	{
 		return 2;
 	}
-	if (nullptr == funcPostClientInfo)
-	{
-		return 3;
-	}
-	if (nullptr == funcPostErrorInfo)
+	if (nullptr == funcPostErrorLog)
 	{
 		return 4;
 	}
-	if (nullptr == funcPerformanceInfo)
-	{
-		return 5;
-	}
-	return APMReport::TaskManager::GetInstance().APMInit(funcGetSwitch, funcGetConfig, funcPostClientInfo, funcPostErrorInfo, funcPerformanceInfo, funcLog);
+	return APMReport::TaskManager::GetInstance().APMInit(funcGetSwitch, funcGetConfig, funcPostErrorLog, funcLog);
 }
 
-APM_REPORT_API int SetClientInfo(const char* appID, const char* appVersion, const char* OS, const char* OSVersion, const char* deviceModel)
-{
-	return 0;
-}
-
-APM_REPORT_API int BuildClientInfo(const char* appID, const char* UUID, const char* baseInfo, char* outJosn, int& outLen)
+APM_REPORT_API int SetClientInfo(const char* appID, const char* UUID, const char* baseInfo, char* outJosn, int& outLen)
 {
 	if (appID == nullptr || appID == "")
 	{
 		LOGERROR("appID is null or empty.");
 		return 1;
 	}
+	g_appID = appID;
 	if (UUID == nullptr || UUID == "")
 	{
 		LOGERROR("UUID is null or empty.");
@@ -65,11 +54,25 @@ APM_REPORT_API int BuildClientInfo(const char* appID, const char* UUID, const ch
 		return -1;
 	}
 	base["s_ver"] = SDKVERSION;
+	g_baseMD5Info = APMReport::MD5(base.asString());
+	if (g_baseMD5Info.empty())
+	{
+		LOGERROR("baseInfo to MD5 Error.");
+		return -1;
+	}
+
+	//基础信息，该字段需要加密+base64转码传输
+	std::string encodeBaseInfo;
+	if (APMReport::AesEncrypt(base.asCString(), encodeBaseInfo) < 0)
+	{
+		LOGERROR("AesEncrypt baseInfo Error.");
+		return -1;
+	}
 
 	std::string keyID, pubKey;
 	if (APMReport::GetRSAPubKey(keyID, pubKey) < 0)
 	{
-		LOGERROR("RSAPubkey is empty ,should set RSA public key.");
+		LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
 		return -1;
 	}
 
@@ -78,10 +81,9 @@ APM_REPORT_API int BuildClientInfo(const char* appID, const char* UUID, const ch
 	root["d_uuid"] = UUID;
 	root["key_id"] = keyID;
 	root["a_key"] = APMReport::GetAESKey();
-	g_baseMD5Info = APMReport::MD5(base.asString());
 	root["base_md5"] = g_baseMD5Info;
 	root["logtime"] = APMReport::GetTimeNowStr();
-	root["base_info"] = base;
+	root["base_info"] = encodeBaseInfo;
 	std::string jsonStr = root.asString();
 	outLen = jsonStr.length();
 	memcpy(outJosn, jsonStr.c_str(), outLen);
@@ -100,13 +102,7 @@ APM_REPORT_API int SetReportConfig(const char* json)
 	return 0;
 }
 
-APM_REPORT_API int AddErrorInfo(const char* json)
-{
-	return 0;
-}
-
-
-APM_REPORT_API int AddPerformanceInfo(const char* json)
+APM_REPORT_API int AddErrorLog(const char* json)
 {
 	return 0;
 }
@@ -118,7 +114,34 @@ APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 
 APM_REPORT_API int BuildPerformanceInfo(const char* msg, char* outText, int& outLen)
 {
+	if (msg == nullptr || msg == "")
+	{
+		LOGERROR("msg is null or empty.");
+		return 1;
+	}
 
+	//指标数组，该字段内容需要压缩+加密
+	std::string data(msg);
+	std::string zipData = APMReport::GzipCompress(data);
+	std::string metrics;
+	APMReport::AesEncrypt(zipData.c_str(), metrics);
+
+	std::string keyID, pubKey;
+	if (APMReport::GetRSAPubKey(keyID, pubKey) < 0)
+	{
+		LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
+		return -1;
+	}
+
+	Json::Value root;
+	root["app_id"] = g_appID;
+	root["key_id"] = keyID;
+	root["a_key"] = APMReport::GetAESKey();
+	root["base_md5"] = g_baseMD5Info;
+	root["metrics"] = metrics;
+	std::string jsonStr = root.asString();
+	outLen = jsonStr.length();
+	memcpy(outText, jsonStr.c_str(), outLen);
 	return 0;
 }
 

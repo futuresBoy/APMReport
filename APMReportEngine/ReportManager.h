@@ -70,24 +70,20 @@ namespace APMReport
 	class TaskManager
 	{
 	public:
-		TaskManager() :m_funcGetSwitch(nullptr), m_funcGetConfig(nullptr), m_funcPostClientInfo(nullptr), m_funcPostErrorInfo(nullptr), m_funcPerformanceInfo(nullptr) {};
+		TaskManager() :m_funcGetSwitch(nullptr), m_funcGetConfig(nullptr), m_funcPostErrorInfo(nullptr) {};
 		virtual ~TaskManager();
 		static TaskManager& GetInstance();
 	public:
 		int APMInit(
 			GetSwitchFunc funcGetSwitch,			//通知获取开关
 			GetConfigFunc funcGetConfig,			//通知获取阈值配置
-			PostClientInfoFunc funcPostClientInfo,	//通知上传设备基础信息
-			PostErrorInfoFunc funcPostErrorInfo,		//通知上传错误信息
-			PostPerformanceInfoFunc funcPerfInfo,	//通知上传性能信息
+			PostErrorLogFunc funcPostErrorInfo,		//通知上传错误信息
 			LogFunc funcLog							//日志打印函数
 		);
 	public:
 		GetSwitchFunc m_funcGetSwitch;
 		GetConfigFunc m_funcGetConfig;
-		PostClientInfoFunc m_funcPostClientInfo;
-		PostErrorInfoFunc m_funcPostErrorInfo;
-		PostPerformanceInfoFunc m_funcPerformanceInfo;
+		PostErrorLogFunc m_funcPostErrorInfo;
 	public:
 		//加载开关
 		bool LoadSwitch(const char* msg);

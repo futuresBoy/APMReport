@@ -1,5 +1,7 @@
 //工具类，用于APM相关的数据格式解析、压缩、加密操作
 
+#pragma warning( disable : 4996 )
+
 #include <base64.h>
 #include <aes.h>
 #include <rsa.h>
@@ -30,6 +32,12 @@ namespace APMReport
 	//加密后的AES密钥
 	std::string g_cipherAESKey;
 
+	static void APMReport()
+	{
+		AutoSeededRandomPool rnd;
+		rnd.GenerateBlock(g_AESKey, g_AESKey.size());
+	}
+
 	std::string GetTimeNowStr()
 	{
 		time_t t = time(0);
@@ -40,14 +48,11 @@ namespace APMReport
 
 	int SetRSAPubKey(const char* keyID, const char* RSAPubkey)
 	{
-		if (keyID == nullptr || strlen(keyID))
+		if (keyID == nullptr || RSAPubkey == nullptr)
 		{
 			return -1;
 		}
-		if (RSAPubkey == nullptr || strlen(RSAPubkey))
-		{
-			return -1;
-		}
+		
 		std::string pubKeyID(keyID);
 		g_keyID = pubKeyID;
 		std::string pubKey(RSAPubkey);
@@ -75,18 +80,19 @@ namespace APMReport
 
 	std::string RSAEncrypt(const std::string& plain)
 	{
-		// Generate keys
 		AutoSeededRandomPool rng;
-		/*InvertibleRSAFunction params;
-		params.GenerateRandomWithKeySize(rng, 3072);
-		RSA::PublicKey publicKey(params);
-		RSAES_OAEP_SHA_Encryptor en(publicKey);*/
-
-		StringSource source(g_RSAPubkey, true, new Base64Encoder);
-		RSAES_OAEP_SHA_Encryptor encrypt(source);
-
 		std::string cipher;
-		StringSource ss1(plain, true, new PK_EncryptorFilter(rng, encrypt, new StringSink(cipher)));
+		try
+		{
+			StringSource source(g_RSAPubkey, true, new Base64Encoder);
+			RSAES_OAEP_SHA_Encryptor encrypt(source);
+			
+			StringSource ss1(plain, true, new PK_EncryptorFilter(rng, encrypt, new StringSink(cipher)));
+		}
+		catch (const std::exception& ex)
+		{
+			LOGFATAL(ex.what());
+		}
 		return cipher;
 	}
 
@@ -194,10 +200,17 @@ namespace APMReport
 			return data;
 		}
 		std::string compressed;
-
-		Gzip zipper(new StringSink(compressed));
-		zipper.Put((byte*)data.data(), data.size());
-		zipper.MessageEnd();
+		try
+		{
+			Gzip zipper(new StringSink(compressed));
+			zipper.Put((byte*)data.data(), data.size());
+			zipper.MessageEnd();
+		}
+		catch (const std::exception& ex)
+		{
+			LOGFATAL(ex.what());
+		}
+		return compressed;
 	}
 
 	std::string GzipCompress2(std::string& data)
@@ -207,8 +220,15 @@ namespace APMReport
 			return data;
 		}
 		std::string compressed;
-
-		StringSource ss(data, true, new Gzip(new StringSink(compressed)));
+		try
+		{
+			StringSource ss(data, true, new Gzip(new StringSink(compressed)));
+		}
+		catch (const std::exception& ex)
+		{
+			LOGFATAL(ex.what());
+		}
+		return compressed;
 	}
 }
 

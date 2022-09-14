@@ -1,6 +1,5 @@
 namespace APMReport
 {
-	
 	/*
 		功能：获取当前时间字符串
 		返回：标准格式时间

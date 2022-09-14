@@ -16,23 +16,21 @@ namespace APMReport
 	}
 
 	/*≥ı ºªØ*/
-	int APMReport::TaskManager::APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostClientInfoFunc funcPostClientInfo, PostErrorInfoFunc funcPostErrorInfo, PostPerformanceInfoFunc funcPerformanceInfo, LogFunc funcLog)
+	int APMReport::TaskManager::APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostErrorLogFunc funcPostErrorInfo, LogFunc funcLog)
 	{
-		if (nullptr == funcGetSwitch || nullptr == funcGetConfig || nullptr == funcPostClientInfo || nullptr == funcPostErrorInfo)
+		if (nullptr == funcGetSwitch || nullptr == funcGetConfig || nullptr == funcPostErrorInfo)
 		{
 			LOGERROR("Required parameter error!");
 			return -1;
 		}
 		if (m_bInited)
 		{
-			//LOGINFO("Inited Aready!");
+			LOGWARN("Inited Aready!");
 			return 0;
 		}
 		m_funcGetSwitch = funcGetSwitch;
 		m_funcGetConfig = funcGetConfig;
-		m_funcPostClientInfo = m_funcPostClientInfo;
 		m_funcPostErrorInfo = funcPostErrorInfo;
-		m_funcPerformanceInfo = funcPerformanceInfo;
 		m_bInited = true;
 		LOGINFO("Init finished!");
 		return 0;
