@@ -1,76 +1,124 @@
+/*
+	工具类，用于APM相关数据的解析、压缩、加密等操作
+*/
+
+#pragma warning( disable : 4996 )
+
+#include <base64.h>
+#include <aes.h>
+#include <rsa.h>
+#include <modes.h>
+#include <randpool.h>
+#include <osrng.h>
+#include <hex.h>
+#include <gzip.h>
+#include "Logger.h"
+
+#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
+#include <md5.h>
+
+using namespace CryptoPP;
+#pragma comment(lib, "cryptlib.lib")
+
 namespace APMReport
 {
-	/*
+	class Util
+	{
+		//AES密钥类
+		class AESKeyBlock {
+		public:
+			AESKeyBlock() {
+				//随机生成一个AES密钥
+				SecByteBlock m_block(AES::MIN_KEYLENGTH);
+				AutoSeededRandomPool rnd;
+				rnd.GenerateBlock(m_block, m_block.size());
+			}
+			SecByteBlock m_block;
+		};
+
+	private:
+		//（服务端）密钥编号
+		static std::string g_keyID;
+		//（服务端）RSA公钥
+		static std::string g_RSAPubkey;
+
+		//AES密钥
+		static SecByteBlock g_AESKey;
+	public:
+		//加密后的AES密钥
+		static std::string g_cipherAESKey;
+	public:
+		/*
 		功能：获取当前时间字符串
 		返回：标准格式时间
-	*/
-	std::string GetTimeNowStr();
+		*/
+		static std::string GetTimeNowStr();
 
-	/*
-		功能：设置RSA公钥
-		参数：pubKeyID 公钥编号
-		参数：pubKey 公钥字符串
-		返回值：0 成功，-1 参数不正确
-	*/
-	int SetRSAPubKey(const char* pubKeyID, const char* pubKey);
+		/*
+			功能：设置RSA公钥
+			参数：pubKeyID 公钥编号
+			参数：pubKey 公钥字符串
+			返回值：0 成功，-1 参数不正确
+		*/
+		static int SetRSAPubKey(const char* pubKeyID, const char* pubKey);
 
-	/*
-		功能：获取公钥
-		参数：keyID 公钥编号
-		参数：pubKey 公钥字符
-		返回值：0 成功，-1 获取失败，没有公钥生成
-	*/
-	int GetRSAPubKey(std::string& keyID, std::string& pubKey);
+		/*
+			功能：获取公钥
+			参数：keyID 公钥编号
+			参数：pubKey 公钥字符
+			返回值：0 成功，-1 获取失败，没有公钥生成
+		*/
+		static int GetRSAPubKey(std::string& keyID, std::string& pubKey);
 
-	/*
-		功能：获取当前AES密钥
-		返回：加密后的密钥
-	*/
-	std::string GetAESKey();
+		/*
+			功能：获取当前AES密钥
+		*/
+		static SecByteBlock GetAESKey();
 
-	/*
-		功能：RSA(公钥)加密
-		参数：plain 待加密的明文
-		返回值：加密后的密文
-	*/
-	std::string RSAEncrypt(const std::string& plain);
+		/*
+			功能：RSA(公钥)加密
+			参数：plain 待加密的明文
+			返回值：加密后的密文
+		*/
+		static std::string RSAEncrypt(std::string plain);
 
-	/*
-		功能：RSA（公钥）加密AES密钥
-		参数：pubKey RSA的公钥
-		返回值：0 加密成功，-1 加密失败
-	*/
-	int RSAEncryptAESKey(const char* pubKey);
+		/*
+			功能：RSA（公钥）加密AES密钥
+			参数：pubKey RSA的公钥
+			返回值：0 加密成功，-1 加密失败
+		*/
+		static int RSAEncryptAESKey(const char* pubKey);
 
-	/*
-		功能：使用AES(CBC模式)加密
-		参数：plainText 待加密的明文字符串
-		参数：cipherText 输出的密文（base64编码）
-		参数：outLen 输出的密文长度
-		返回值：0 成功，-1 加密失败
-	*/
-	int AesEncrypt(const char* plainText, char* cipherText, int& outLen);
+		/*
+			功能：使用AES(CBC模式)加密
+			参数：plainText 待加密的明文字符串
+			参数：cipherText 输出的密文（base64编码）
+			参数：outLen 输出的密文长度
+			返回值：0 成功，-1 加密失败
+		*/
+		static int AesEncrypt(const char* plainText, char* cipherText, int& outLen);
 
-	/*
-		功能：使用AES(CBC模式)加密
-		参数：plainText 待加密的明文字符串
-		参数：cipherStr 输出的密文（base64编码）
-		返回值：0 成功，-1 加密失败
-	*/
-	int AesEncrypt(const char* plainText, std::string& cipherStr);
+		/*
+			功能：使用AES(CBC模式)加密
+			参数：plainText 待加密的明文字符串
+			参数：cipherStr 输出的密文（base64编码）
+			返回值：0 成功，-1 加密失败
+		*/
+		static int AesEncrypt(std::string plainText, std::string& cipherStr);
 
-	/*
-		功能：MD5
-		参数：msg 需要进行MD5的字符串
-		返回值：MD5后的字符串
-	*/
-	std::string MD5(std::string msg);
+		/*
+			功能：MD5
+			参数：msg 需要进行MD5的字符串
+			返回值：MD5后的字符串
+		*/
+		static std::string MD5(std::string msg);
 
-	/*
-		功能：Gzip压缩
-		参数：data 需要压缩的数据
-		返回值：压缩后的数据
-	*/
-	std::string GzipCompress(std::string& data);
+		/*
+			功能：Gzip压缩
+			参数：data 需要压缩的数据
+			返回值：压缩后的数据
+		*/
+		static std::string GzipCompress(std::string& data);
+	};
+
 }
-

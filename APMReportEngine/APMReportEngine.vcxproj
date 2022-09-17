@@ -103,6 +103,9 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>lib\debug;</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(TargetPath) $(SolutionDir)\APMTest\bin\Debug /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -166,6 +169,7 @@
     <ClInclude Include="json\json.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ReportManager.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +178,9 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="ReportManager.cpp" />
     <ClCompile Include="Util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="APMReportEngine.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

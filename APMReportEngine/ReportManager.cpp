@@ -1,6 +1,6 @@
 #include "Logger.h"
 #include "ReportManager.h"
-
+#include "Util.h"
 
 namespace APMReport
 {
@@ -72,6 +72,18 @@ namespace APMReport
 	/*º”‘ÿ„–÷µ≈‰÷√*/
 	bool TaskManager::LoadConfig(const char* msg)
 	{
+		if (msg == nullptr || msg == "")
+		{
+			LOGERROR("message is null or empty.");
+			return 1;
+		}
+		Json::Value base;
+		Json::Reader reader;
+		if (!reader.parse(msg, base))
+		{
+			LOGERROR("message is not json.");
+			return -1;
+		}
 		return false;
 	}
 
