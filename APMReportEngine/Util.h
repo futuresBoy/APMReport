@@ -24,26 +24,10 @@ namespace APMReport
 {
 	class Util
 	{
-		//AES密钥类
-		class AESKeyBlock {
-		public:
-			AESKeyBlock() {
-				//随机生成一个AES密钥
-				SecByteBlock m_block(AES::MIN_KEYLENGTH);
-				AutoSeededRandomPool rnd;
-				rnd.GenerateBlock(m_block, m_block.size());
-			}
-			SecByteBlock m_block;
-		};
 
 	private:
-		//（服务端）密钥编号
-		static std::string g_keyID;
-		//（服务端）RSA公钥
-		static std::string g_RSAPubkey;
-
 		//AES密钥
-		static SecByteBlock g_AESKey;
+		static std::string g_AESKey;
 	public:
 		//加密后的AES密钥
 		static std::string g_cipherAESKey;
@@ -73,7 +57,7 @@ namespace APMReport
 		/*
 			功能：获取当前AES密钥
 		*/
-		static SecByteBlock GetAESKey();
+		static std::string GetAESKey();
 
 		/*
 			功能：RSA(公钥)加密
@@ -112,6 +96,13 @@ namespace APMReport
 			返回值：MD5后的字符串
 		*/
 		static std::string MD5(std::string msg);
+
+		/*
+			功能：生成指定长度的随机字符串
+			size: 字符串的长度
+			printable：是否可打印。如果用作key，可以使用不可打印的字符
+		*/
+		static std::string GenerateRandStr(int size, bool printable);
 
 		/*
 			功能：Gzip压缩

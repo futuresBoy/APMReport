@@ -1,19 +1,21 @@
 
 #include "Util.h"
+#include <random>
 
 namespace APMReport
 {
-	//（服务端）密钥编号
-	std::string Util::g_keyID = "6758ae5bcabf52bf1016a6803b846db5";
-
-	//（服务端）RSA公钥
-	std::string Util::g_RSAPubkey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB";
-
 	//AES密钥
-	SecByteBlock Util::g_AESKey;
-
+	std::string Util::g_AESKey;
 	//加密后的AES密钥
 	std::string Util::g_cipherAESKey;
+
+	//（服务端）密钥编号
+	static std::string g_keyID = "6758ae5bcabf52bf1016a6803b846db5";
+	//（服务端）RSA公钥
+	static std::string g_RSAPubkey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB";
+
+	// 采样字符集
+	static constexpr char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	std::string Util::GetTimeNowStr()
 	{
@@ -39,8 +41,7 @@ namespace APMReport
 
 	int Util::RSAEncryptAESKey(const char* pubKey)
 	{
-		auto aesKey = GetAESKey();
-		std::string key(reinterpret_cast<const char*>(&aesKey[0]), aesKey.size());
+		std::string key = GetAESKey();
 		auto cipherText = RSAEncrypt(key);
 		if (cipherText.length() == 0)
 		{
@@ -79,17 +80,34 @@ namespace APMReport
 		return 0;
 	}
 
-	SecByteBlock Util::GetAESKey()
+	std::string Util::GetAESKey()
 	{
 		if (!g_AESKey.empty())
 		{
 			return g_AESKey;
 		}
-		//随机生成一个AES密钥
-		SecByteBlock g_AESKey(AES::MIN_KEYLENGTH);
-		AutoSeededRandomPool rnd;
-		rnd.GenerateBlock(g_AESKey, g_AESKey.size());
+		g_AESKey= GenerateRandStr(16, true);
 		return g_AESKey;
+	}
+
+	std::string Util::GenerateRandStr(int sz, bool printable)
+	{
+		std::string ret;
+		ret.resize(sz);
+		std::mt19937 rng(std::random_device{}());
+		for (int i = 0; i < sz; ++i)
+		{
+			if (printable)
+			{
+				uint32_t x = rng() % (sizeof(CCH) - 1);
+				ret[i] = CCH[x];
+			}
+			else
+			{
+				ret[i] = rng() % 0xFF;
+			}
+		}
+		return ret;
 	}
 
 	int Util::AesEncrypt(const char* plainText, char* cipherText, int& outLen)
@@ -110,12 +128,8 @@ namespace APMReport
 		try
 		{
 			auto key = GetAESKey();
-			//使用key填iv
-			SecByteBlock iv(AES::MIN_KEYLENGTH);
-			memcpy(iv, key, AES::MIN_KEYLENGTH);
-
 			CBC_Mode<AES>::Encryption en;
-			en.SetKeyWithIV(key, key.size(), iv);
+			en.SetKeyWithIV((byte*)key.c_str(), key.length(), (byte*)key.c_str());
 
 			StringSource s(plainText, true,
 				new StreamTransformationFilter(en,
