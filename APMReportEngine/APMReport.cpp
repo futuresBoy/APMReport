@@ -64,7 +64,9 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		}
 		base["s_ver"] = SDKVERSION;
 
-		auto baseStr = Json::FastWriter().write(base);
+		auto jsonWriter = Json::FastWriter();
+		jsonWriter.omitEndingLineFeed();
+		auto baseStr = jsonWriter.write(base);
 		g_baseMD5Info = APMReport::Util::MD5(baseStr);
 		if (g_baseMD5Info.empty())
 		{
@@ -95,7 +97,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		root["base_md5"] = g_baseMD5Info;
 		root["logtime"] = APMReport::Util::GetTimeNowStr();
 		root["base_info"] = encodeBaseInfo;
-		std::string jsonStr = Json::FastWriter().write(root);
+		std::string jsonStr = jsonWriter.write(root);
 		
 		if (jsonStr.length() >= length)
 		{
@@ -164,7 +166,9 @@ APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& len
 		root["a_key"] = APMReport::Util::g_cipherAESKey;
 		root["base_md5"] = g_baseMD5Info;
 		root["metrics"] = metrics;
-		std::string jsonStr = Json::FastWriter().write(root);
+		auto jsonWriter = Json::FastWriter();
+		jsonWriter.omitEndingLineFeed();
+		std::string jsonStr = jsonWriter.write(root);
 		if (jsonStr.length() >= length)
 		{
 			length = jsonStr.length() + 1;
