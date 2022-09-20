@@ -25,25 +25,34 @@ namespace APMReport
 		return std::string(tmp);
 	}
 
-	int Util::SetRSAPubKey(const char* keyID, const char* RSAPubkey)
+	int Util::GetRSAPubKey(std::string& keyID, std::string& pubKey)
 	{
-		if (keyID == nullptr || RSAPubkey == nullptr)
+		if (g_keyID.empty() || g_RSAPubkey.empty())
 		{
+			return -1;
+		}
+		keyID = g_keyID;
+		pubKey = g_RSAPubkey;
+		return 0;
+	}
+
+	int Util::SetRSAPubKey(const char* keyID, const char* rsaPubkey)
+	{
+		if (keyID == nullptr || keyID == "" || rsaPubkey == nullptr || rsaPubkey == "")
+		{
+			LOGERROR("rsa public key is empty!");
 			return -1;
 		}
 
 		std::string pubKeyID(keyID);
 		g_keyID = pubKeyID;
-		std::string pubKey(RSAPubkey);
+		std::string pubKey(rsaPubkey);
 		g_RSAPubkey = pubKey;
-		return RSAEncryptAESKey(RSAPubkey);
-	}
 
-	int Util::RSAEncryptAESKey(const char* pubKey)
-	{
-		std::string key = GetAESKey();
-		auto cipherText = RSAEncrypt(key);
-		if (cipherText.length() == 0)
+		//使用RSA公钥加密AES密钥
+		std::string aesKey = GetAESKey();
+		auto cipherText = RSAEncrypt(aesKey);
+		if (cipherText.empty())
 		{
 			return -1;
 		}
@@ -69,24 +78,14 @@ namespace APMReport
 		return cipher;
 	}
 
-	int Util::GetRSAPubKey(std::string& keyID, std::string& pubKey)
-	{
-		if (g_keyID.empty() || g_RSAPubkey.empty())
-		{
-			return -1;
-		}
-		keyID = g_keyID;
-		pubKey = g_RSAPubkey;
-		return 0;
-	}
-
 	std::string Util::GetAESKey()
 	{
 		if (!g_AESKey.empty())
 		{
 			return g_AESKey;
 		}
-		g_AESKey= GenerateRandStr(16, true);
+		//生成16位的随机密钥
+		g_AESKey = GenerateRandStr(16, true);
 		return g_AESKey;
 	}
 

@@ -70,25 +70,22 @@ namespace APMReport
 	class TaskManager
 	{
 	public:
-		TaskManager() :m_funcGetSwitch(nullptr), m_funcGetConfig(nullptr), m_funcPostErrorInfo(nullptr) {};
+		TaskManager() : m_funcPostErrorInfo(nullptr) {};
 		virtual ~TaskManager();
 		static TaskManager& GetInstance();
 	public:
 		int APMInit(
-			GetSwitchFunc funcGetSwitch,			//通知获取开关
-			GetConfigFunc funcGetConfig,			//通知获取阈值配置
 			PostErrorLogFunc funcPostErrorInfo,		//通知上传错误信息
 			LogFunc funcLog							//日志打印函数
 		);
 	public:
-		GetSwitchFunc m_funcGetSwitch;
-		GetConfigFunc m_funcGetConfig;
 		PostErrorLogFunc m_funcPostErrorInfo;
 	public:
 		//加载开关
-		bool LoadSwitch(const char* msg);
+		int LoadSwitch(const char* msg);
 		//加载阈值配置
-		bool LoadConfig(const char* msg);
+		int LoadConfig(const char* msg);
+		int GetResponseData(const char* msg, Json::Value& data);
 	private:
 		bool m_bInited = false;
 		std::recursive_mutex m_configMutex;

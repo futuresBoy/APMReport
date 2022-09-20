@@ -36,12 +36,6 @@ extern "C"
 		Tcp
 	};
 
-	/*获取开关配置*/
-	typedef int (*GetSwitchFunc)(const char* url);
-
-	/*获取阈值配置*/
-	typedef int (*GetConfigFunc)(const char* url);
-
 	/*上传异常信息*/
 	typedef int (*PostErrorLogFunc)(const char* msg, unsigned int length, const char* url);
 
@@ -54,15 +48,19 @@ extern "C"
 	typedef void (*LogFunc)(const char* logInfo, LogLevel logLevel);
 
 	/*
-		功能：发送模块初始化
-		返回值：0 成功，1 开关函数为空，2 阈值配置函数为空，3  上传错误信息函数为空
+		功能：初始化日志
+	*	参数：funcLog 日志打印函数
+		返回值：0 成功，-1 异常
 	*/
-	APM_REPORT_API int APMInit(
-		GetSwitchFunc funcGetSwitch,			//通知获取开关
-		GetConfigFunc funcGetConfig,			//通知获取阈值配置
-		PostErrorLogFunc funcPostErrorLog,		//通知上传错误信息
-		LogFunc funcLog							//日志打印函数
-	);
+	APM_REPORT_API int InitLogger(LogFunc funcLog);
+
+	/*
+		功能：发送模块初始化
+		参数：funcPostErrorLog 通知上传错误信息
+	*	参数：funcLog 日志打印函数
+		返回值：0 成功，-1 异常
+	*/
+	APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog);
 
 	/*
 		功能：获取SDK版本号
@@ -71,7 +69,7 @@ extern "C"
 	APM_REPORT_API const char* GetSDKVersion();
 
 	/*
-		设置客户端基础信息
+		功能：设置客户端基础信息
 		参数：baseInfo 客户端基础信息（json格式）：
 			{"app_id": "应用标识，cmdb上登记的客户端程序英文编码",
 			"d_uuid": "设备uuid，设备唯一标识，如Mac地址"
@@ -84,22 +82,22 @@ extern "C"
 		入/出参：length 外部为字符申请的空间长度为入参，出参为输出的字符长度
 		返回值：0 成功，-1 参数异常，-2 输出的字符串空间长度不够
 	*/
-	APM_REPORT_API int SetClientInfo(const char* baseInfo,char* outText,int& length);
+	APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outText, int& length);
 
 	/*
-		设置阈值配置
+		功能：设置阈值配置
 		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int SetReportConfig(const char* json);
 
 	/*
-		设置开关
+		功能：设置开关
 		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int SetReportSwitch(const char* json);
 
 	/*
-		记录（客户端）异常日志
+		功能：记录（客户端）异常日志
 		返回值：0 成功，-1 参数异常
 	*/
 	APM_REPORT_API int AddErrorLog(const char* msg);
@@ -107,12 +105,13 @@ extern "C"
 
 	/*
 		功能：组装性能数据，并进行加密+压缩
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
 		参数：msg 性能指标数据
 		参数：outText 输出的性能数据字符
 		入/出参：length 外部为字符申请的空间长度为入参，出参为输出的字符长度
 		返回值：0 成功，-1 失败，-2 输出的字符串空间长度不够
 	*/
-	APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& length);
+	APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int& length);
 
 	/*
 		功能：设置RSA公钥

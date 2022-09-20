@@ -14,8 +14,13 @@ namespace APMTest
             TestGo();
         }
 
+        static APMDllImport.APMLogFunc logFunc;
+
         private static void TestGo()
         {
+            logFunc = OnLogNotify;
+            APMDllImport.InitLogger(logFunc);
+
             //1.获取SDK版本
             IntPtr ptr = APMDllImport.GetSDKVersion();
             var versionStr = Marshal.PtrToStringAnsi(ptr);
@@ -24,8 +29,8 @@ namespace APMTest
             int rasResult = APMDllImport.SetRSAPubKey("6758ae5bcabf52bf1016a6803b846db5", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB");
 
             //2.2 设置阈值（包括RSA密钥）
-            //string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"6758ae5bcabf52bf1016a6803b846db5\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"600\\\",\\\"aggre_count\\\":\\\"100\\\"}\"}]}} ";
-            //int configResult = APMDllImport.SetReportConfig(ss);
+            string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"6758ae5bcabf52bf1016a6803b846db5\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"600\\\",\\\"aggre_count\\\":\\\"100\\\"}\"}]}} ";
+            int configResult = APMDllImport.SetReportConfig(ss);
 
             //3.设置基础数据
             var baseInfo = new BaseInfo();
@@ -44,9 +49,14 @@ namespace APMTest
             //4.性能信息压缩加密
             int len = 10240;
             IntPtr ptrPerfor = Marshal.AllocHGlobal(len);
-            int perResult = APMDllImport.BuildPerformanceData("aaaadfasfasfafafadfasfafafasdfasdffffffffffffffffffffffffffffasfasdfasdfasdfasdfasdfasdfas", ptrPerfor, ref len);
+            int perResult = APMDllImport.BuildPerformanceData(baseInfo.app_id, "aaaadfasfasfafafadfasfafafasdfasdffffffffffffffffffffffffffffasfasdfasdfasdfasdfasdfasdfas", ptrPerfor, ref len);
             string text2 = Marshal.PtrToStringAnsi(ptrPerfor, len);
             Console.ReadLine();
+        }
+
+        public static void OnLogNotify(string message, int level)
+        {
+            Console.WriteLine($"level:[{level}] message:{message}");
         }
 
         /// <summary>

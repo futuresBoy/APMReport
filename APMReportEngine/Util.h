@@ -26,10 +26,8 @@ namespace APMReport
 	{
 
 	private:
-		//AES密钥
 		static std::string g_AESKey;
 	public:
-		//加密后的AES密钥
 		static std::string g_cipherAESKey;
 	public:
 		/*
@@ -65,13 +63,6 @@ namespace APMReport
 			返回值：加密后的密文
 		*/
 		static std::string RSAEncrypt(std::string plain);
-
-		/*
-			功能：RSA（公钥）加密AES密钥
-			参数：pubKey RSA的公钥
-			返回值：0 加密成功，-1 加密失败
-		*/
-		static int RSAEncryptAESKey(const char* pubKey);
 
 		/*
 			功能：使用AES(CBC模式)加密

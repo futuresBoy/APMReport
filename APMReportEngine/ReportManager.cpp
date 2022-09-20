@@ -16,75 +16,93 @@ namespace APMReport
 	}
 
 	/*初始化*/
-	int APMReport::TaskManager::APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostErrorLogFunc funcPostErrorInfo, LogFunc funcLog)
+	int APMReport::TaskManager::APMInit(PostErrorLogFunc funcPostErrorInfo, LogFunc funcLog)
 	{
-		if (nullptr == funcGetSwitch || nullptr == funcGetConfig || nullptr == funcPostErrorInfo)
+		if (nullptr != funcPostErrorInfo)
 		{
-			LOGERROR("Required parameter error!");
-			return -1;
+			m_funcPostErrorInfo = funcPostErrorInfo;
 		}
 		if (m_bInited)
 		{
 			LOGWARN("Inited Aready!");
 			return 0;
 		}
-		m_funcGetSwitch = funcGetSwitch;
-		m_funcGetConfig = funcGetConfig;
-		m_funcPostErrorInfo = funcPostErrorInfo;
 		m_bInited = true;
 		LOGINFO("Init finished!");
 		return 0;
 	}
 
 	/*加载开关*/
-	bool TaskManager::LoadSwitch(const char* msg)
+	int TaskManager::LoadSwitch(const char* msg)
 	{
-		Json::Value root;
-		Json::Reader reader;
+
 		try
 		{
-			if (!reader.parse(msg, root))
+			Json::Value data;
+			int result = TaskManager::GetResponseData(msg, data);
+			if (result != 0)
 			{
-				LOGERROR("Parse switch config json failed!");
+				return result;
 			}
-
-			int statusCode = root["status_code"].asInt();
-			auto statusMsg = root["status_msg"].asCString();
-			if (statusCode != 0)
-			{
-				LOGERROR("Get switch config api error: %s", statusMsg);
-				return statusCode;
-			}
-			
 			std::lock_guard<std::recursive_mutex> lck(m_configMutex);
-
 
 		}
 		catch (const std::exception&)
 		{
-			LOGERROR("Load switch config json failed!");
+			LOGERROR("Load switch config failed!");
+			return -1;
+		}
+		return 0;
+	}
+
+	/*获取（HTTP）响应数据*/
+	int TaskManager::GetResponseData(const char* msg, Json::Value& data)
+	{
+		Json::Value root;
+		Json::Reader reader;
+		if (!reader.parse(msg, root))
+		{
+			LOGERROR("Parse ResponseData to json failed!");
+			return -1;
 		}
 
-
-		return false;
+		int statusCode = root["status_code"].asInt();
+		auto statusMsg = root["status_msg"].asCString();
+		if (statusCode != 0)
+		{
+			LOGERROR("ResponseData is error,status_msg: %s", statusMsg);
+			return -1;
+		}
+		data = root["data"];
+		return 0;
 	}
 
 	/*加载阈值配置*/
-	bool TaskManager::LoadConfig(const char* msg)
+	int TaskManager::LoadConfig(const char* msg)
 	{
-		if (msg == nullptr || msg == "")
+		try
 		{
-			LOGERROR("message is null or empty.");
-			return 1;
+			Json::Value data;
+			int result = GetResponseData(msg, data);
+			if (result != 0)
+			{
+				return result;
+			}
+			//设置程序的RSA公钥
+			std::string pubKeyID = data["pub_key_id"].asString();
+			std::string pubKey = data["pub_key"].asString();
+			result = APMReport::Util::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
+			if (result != 0)
+			{
+				return result;
+			}
 		}
-		Json::Value base;
-		Json::Reader reader;
-		if (!reader.parse(msg, base))
+		catch (const std::exception & e)
 		{
-			LOGERROR("message is not json.");
+			LOGERROR(e.what());
 			return -1;
 		}
-		return false;
+		return 0;
 	}
 
 	bool APMReport::Task::LoadConfig(const Json::Value& root)

@@ -12,6 +12,21 @@ namespace APMTest
         const string dllName = "APMReportEngine.dll";
 
         /// <summary>
+        /// 接收日志打印回调函数
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="level"></param>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public delegate void APMLogFunc(string message, int level);
+
+        /// <summary>
+        /// 获取SDK版本
+        /// </summary>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern void InitLogger(APMLogFunc logFunc);
+
+        /// <summary>
         /// 获取SDK版本
         /// </summary>
         /// <returns></returns>
@@ -34,8 +49,8 @@ namespace APMTest
         /// <param name="outText"></param>
         /// <param name="length"></param>
         /// <returns></returns>
-        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl,CharSet =CharSet.Ansi)]
-        public static extern int SetClientInfo(string baseInfo,IntPtr outText, ref int length);
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int SetClientInfo(string baseInfo, IntPtr outText, ref int length);
 
         /// <summary>
         /// 组装性能数据
@@ -45,7 +60,7 @@ namespace APMTest
         /// <param name="length"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int BuildPerformanceData(string msg, IntPtr outText, ref int length);
+        public static extern int BuildPerformanceData(string appID, string msg, IntPtr outText, ref int length);
 
         /// <summary>
         /// 设置阈值配置

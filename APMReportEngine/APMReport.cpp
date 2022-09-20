@@ -6,26 +6,20 @@
 
 #define SDKVERSION "1.0.0.1"
 
-//缓存设备基础数据的MD5信息
-std::string g_baseMD5Info;
-std::string g_appID;
+//各appID对应的基础数据
+std::map<std::string, std::string> _appBaseInfoMap;
 
-APM_REPORT_API int APMInit(GetSwitchFunc funcGetSwitch, GetConfigFunc funcGetConfig, PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
+APM_REPORT_API int InitLogger(LogFunc funcLog)
 {
 	InitLog(funcLog);
-	if (nullptr == funcGetSwitch)
-	{
-		return 1;
-	}
-	if (nullptr == funcGetConfig)
-	{
-		return 2;
-	}
-	if (nullptr == funcPostErrorLog)
-	{
-		return 3;
-	}
-	return APMReport::TaskManager::GetInstance().APMInit(funcGetSwitch, funcGetConfig, funcPostErrorLog, funcLog);
+	LOGINFO("InitLogger.");
+	return 0;
+}
+
+APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
+{
+	InitLog(funcLog);
+	return APMReport::TaskManager::GetInstance().APMInit(funcPostErrorLog, funcLog);
 }
 
 APM_REPORT_API const char* GetSDKVersion()
@@ -40,7 +34,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		LOGERROR("baseInfo is null or empty.");
 		return -1;
 	}
-	
+
 	try
 	{
 		Json::Value base;
@@ -50,8 +44,8 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 			LOGERROR("baseInfo is not json.");
 			return -1;
 		}
-		g_appID = base["app_id"].asString();
-		if (g_appID.empty())
+		std::string appID = base["app_id"].asString();
+		if (appID.empty())
 		{
 			LOGERROR("app_id is null or empty.");
 			return -1;
@@ -67,12 +61,13 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		auto baseStr = jsonWriter.write(base);
-		g_baseMD5Info = APMReport::Util::MD5(baseStr);
-		if (g_baseMD5Info.empty())
+		std::string appInfoMD5 = APMReport::Util::MD5(baseStr);
+		if (appInfoMD5.empty())
 		{
 			LOGERROR("baseInfo to MD5 Error.");
 			return -1;
 		}
+		_appBaseInfoMap.insert_or_assign(appID, appInfoMD5);
 
 		//基础信息，该字段需要加密+base64转码传输
 		std::string encodeBaseInfo;
@@ -90,15 +85,15 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		}
 
 		Json::Value root;
-		root["app_id"] = g_appID;
+		root["app_id"] = appID;
 		root["d_uuid"] = uuid;
 		root["key_id"] = keyID;
 		root["a_key"] = APMReport::Util::g_cipherAESKey;
-		root["base_md5"] = g_baseMD5Info;
+		root["base_md5"] = appInfoMD5;
 		root["logtime"] = APMReport::Util::GetTimeNowStr();
 		root["base_info"] = encodeBaseInfo;
 		std::string jsonStr = jsonWriter.write(root);
-		
+
 		if (jsonStr.length() >= length)
 		{
 			length = jsonStr.length() + 1;
@@ -115,16 +110,24 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 	return 0;
 }
 
-APM_REPORT_API int SetReportConfig(const char* json)
+APM_REPORT_API int SetReportConfig(const char* msg)
 {
-	APMReport::TaskManager::GetInstance().LoadConfig(json);
-	return 0;
+	if (msg == nullptr || msg == "")
+	{
+		LOGERROR("message is null or empty.");
+		return -1;
+	}
+	return APMReport::TaskManager::GetInstance().LoadConfig(msg);
 }
 
-APM_REPORT_API int SetReportSwitch(const char* json)
+APM_REPORT_API int SetReportSwitch(const char* msg)
 {
-	APMReport::TaskManager::GetInstance().LoadSwitch(json);
-	return 0;
+	if (msg == nullptr || msg == "")
+	{
+		LOGERROR("message is null or empty.");
+		return -1;
+	}
+	return APMReport::TaskManager::GetInstance().LoadSwitch(msg);
 }
 
 APM_REPORT_API int AddErrorLog(const char* json)
@@ -137,7 +140,7 @@ APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 	return APMReport::Util::SetRSAPubKey(pubKeyID, pubKey);
 }
 
-APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& length)
+APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int& length)
 {
 	if (msg == nullptr || msg == "")
 	{
@@ -151,7 +154,7 @@ APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& len
 		std::string data(msg);
 		std::string zipData = APMReport::Util::GzipCompress(data);
 		std::string metrics;
-		APMReport::Util::AesEncrypt(zipData.c_str(), metrics);
+		APMReport::Util::AesEncrypt(zipData, metrics);
 
 		std::string keyID, pubKey;
 		if (APMReport::Util::GetRSAPubKey(keyID, pubKey) < 0)
@@ -160,11 +163,19 @@ APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& len
 			return -1;
 		}
 
+		std::string appStr = std::string(appID);
+		auto iter = _appBaseInfoMap.find(appStr);
+		if (iter == _appBaseInfoMap.end())
+		{
+			LOGERROR("appID can not find, please set clientInfo first.");
+			return -1;
+		}
+
 		Json::Value root;
-		root["app_id"] = g_appID;
+		root["app_id"] = appID;
 		root["key_id"] = keyID;
 		root["a_key"] = APMReport::Util::g_cipherAESKey;
-		root["base_md5"] = g_baseMD5Info;
+		root["base_md5"] = iter->second;
 		root["metrics"] = metrics;
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
@@ -177,7 +188,7 @@ APM_REPORT_API int BuildPerformanceData(const char* msg, char* outText, int& len
 		length = jsonStr.length() + 1;
 		memcpy(outText, jsonStr.c_str(), length);
 	}
-	catch (const std::exception& e)
+	catch (const std::exception & e)
 	{
 		LOGFATAL(e.what());
 		return -1;
