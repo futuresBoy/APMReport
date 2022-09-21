@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
-namespace APMTest
+namespace APMTestDemo
 {
-    class APMDllImport
+    public class APMDllImport
     {
         const string dllName = "APMReportEngine.dll";
 

@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APMReport", "APMReport.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "APMReportEngine", "APMReportEngine\APMReportEngine.vcxproj", "{B719C1C8-6EF6-4A0C-96BC-26C79EBB38B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APMTest", "APMTest\APMTest.csproj", "{3AD36652-198E-49CA-AB51-059DBFA66CAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APMTestDemo", "APMTest\APMTestDemo.csproj", "{3AD36652-198E-49CA-AB51-059DBFA66CAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

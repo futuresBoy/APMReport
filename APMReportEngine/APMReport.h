@@ -36,20 +36,26 @@ extern "C"
 		Tcp
 	};
 
-	/*上传异常信息*/
+	/*
+	*	函数名：PostErrorLogFunc
+	*	功能：通知上传异常信息
+	*	参数：msg 异常信息字符串
+	*	参数：length 异常信息字符长度
+	*	参数：url 上传的Url地址
+	*/
 	typedef int (*PostErrorLogFunc)(const char* msg, unsigned int length, const char* url);
 
 	/*
 	*	函数名：LogFunc
-	*	功能：日志打印通知，外部可提供日志输出的实现
+	*	功能：日志打印通知，告知SDK内部产生的日志信息，外部进行日志输出的实现
 	*	参数：logInfo 上报模块内部日志信息
 	*	参数：logLevel 日志信息级别
 	*/
 	typedef void (*LogFunc)(const char* logInfo, LogLevel logLevel);
 
 	/*
-		功能：初始化日志
-	*	参数：funcLog 日志打印函数
+		功能：初始化日志输出
+		参数：funcLog 内部日志输出通知
 		返回值：0 成功，-1 异常
 	*/
 	APM_REPORT_API int InitLogger(LogFunc funcLog);
@@ -57,7 +63,7 @@ extern "C"
 	/*
 		功能：发送模块初始化
 		参数：funcPostErrorLog 通知上传错误信息
-	*	参数：funcLog 日志打印函数
+		参数：funcLog 内部日志输出通知
 		返回值：0 成功，-1 异常
 	*/
 	APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog);
