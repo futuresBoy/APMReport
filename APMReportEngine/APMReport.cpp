@@ -142,10 +142,15 @@ APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 
 APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int& length)
 {
+	if (appID == nullptr || appID == "")
+	{
+		LOGERROR("appID is null or empty.");
+		return -1;
+	}
 	if (msg == nullptr || msg == "")
 	{
 		LOGERROR("msg is null or empty.");
-		return 1;
+		return -1;
 	}
 
 	try

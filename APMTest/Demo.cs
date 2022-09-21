@@ -29,6 +29,7 @@ namespace APMTestDemo
             Console.WriteLine("1.SDK Version: " + versionStr);
 
             //2.1 设置RSA密钥
+            int testNull = APMDllImport.SetRSAPubKey(null, null);
             int rasResult = APMDllImport.SetRSAPubKey("6758ae5bcabf52bf1016a6803b846db5", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB");
             Console.WriteLine("SetRSAPubKey: " + rasResult);
 

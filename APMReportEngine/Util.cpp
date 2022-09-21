@@ -185,22 +185,5 @@ namespace APMReport
 		return compressed;
 	}
 
-	/*std::string GzipCompress2(std::string& data)
-	{
-		if (data.empty())
-		{
-			return data;
-		}
-		std::string compressed;
-		try
-		{
-			StringSource ss(data, true, new Gzip(new StringSink(compressed)));
-		}
-		catch (const std::exception & ex)
-		{
-			LOGFATAL(ex.what());
-		}
-		return compressed;
-	}*/
 }
 
