@@ -4,7 +4,7 @@
 #include "APMReport.h"
 #include "ReportManager.h"
 
-#define SDKVERSION "1.0.0.1"
+#define SDKVERSION "1.0.0.2"
 
 //各appID对应的基础数据
 std::map<std::string, std::string> _appBaseInfoMap;
@@ -56,6 +56,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 			LOGERROR("d_uuid is null or empty.");
 			return -1;
 		}
+		base.removeMember("d_uuid");
 		base["s_ver"] = SDKVERSION;
 
 		auto jsonWriter = Json::FastWriter();

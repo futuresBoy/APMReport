@@ -17,7 +17,7 @@ namespace APMCppUnitTest
 
 		TEST_METHOD(TestSDKVersion)
 		{
-			const char* ver = "1.0.0.1";
+			const char* ver = "1.0.0.2";
 			auto version = GetSDKVersion();
 			Assert::AreEqual(ver, version);
 		}
