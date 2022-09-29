@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="APMDllImport.cs" />
     <Compile Include="Demo.cs" />
+    <Compile Include="HxPerformanceImport.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
