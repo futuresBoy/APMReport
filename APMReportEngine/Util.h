@@ -22,14 +22,25 @@ using namespace CryptoPP;
 
 namespace APMReport
 {
+	// 采样字符集
+	static constexpr char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 	class Util
 	{
 
 	private:
+		//AES密钥
 		static std::string g_AESKey;
 	public:
+		//加密后的AES密钥
 		static std::string g_cipherAESKey;
 	public:
+		/*
+		功能：获取随机生成的UUID
+		返回：随机唯一字符串
+		*/
+		static std::string GetRandomUUID();
+
 		/*
 		功能：获取当前时间字符串
 		返回：标准格式时间

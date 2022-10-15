@@ -27,16 +27,23 @@ namespace APMTestDemo
             IntPtr ptr = APMDllImport.GetSDKVersion();
             var versionStr = Marshal.PtrToStringAnsi(ptr);
             Console.WriteLine("SDK Version: " + versionStr);
-            
+
             ////2.1 设置RSA密钥
             //int testNull = APMDllImport.SetRSAPubKey(null, null);
             //int rasResult = APMDllImport.SetRSAPubKey("6758ae5bcabf52bf1016a6803b846db5", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB");
             //Console.WriteLine("SetRSAPubKey: " + rasResult);
 
             //2.2 设置阈值（包括RSA密钥）
-            string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"6758ae5bcabf52bf1016a6803b846db5\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"600\\\",\\\"aggre_count\\\":\\\"100\\\"}\"}]}} ";
+            //测试地址 https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_threshold_config?app_id=mobile-archive-ios&a_ver_app=1.0.0.1&s_ver=1.0.0&d_uuid=asdfadsgfasdgasgasdga
+            string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"1b891e80c0b4cd56a08e2d394a8e31c8\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQD04nj3/4ynPzu28kRh7q83SReo34wKwgaffUm/PfjemtYdcB0LvOwQl74tC2i8pDhvSHMf5mx0USSbr9hQLHp30ubn18oVVyVK2dFsmj1pJylGw2Yw6TnFR/qUfJTA7YteFPVh2ADNc+G9tsA/7SbRiTB3P72zkTB1rnrT+hdILQIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"500\\\",\\\"type\\\":\\\"2\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"slow_load_threshold\\\":\\\"1\\\"}\"},{\"module\":\"base\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\"}\"},{\"module\":\"web\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"type\\\":\\\"3\\\",\\\"white_screen_threshold\\\":\\\"95\\\",\\\"slow_load_threshold\\\":\\\"3\\\"}\"}]}}";
             int configResult = APMDllImport.SetReportConfig(ss);
             Console.WriteLine("SetReportConfig: " + configResult);
+
+            //2.3 设置开关
+            //测试地址：https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_switch_config?app_id=mobile-archive-ios&a_ver_app=1.0.0.1&s_ver=1.0.0&d_uuid=asdfadsgfasdgasgasdga
+            string switchMsg = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"app_id\":\"all\",\"a_ver_app\":\"all\",\"s_ver\":\"all\",\"d_uuid\":\"all\",\"switch\":1,\"gather_switch\":127,\"up_switch\":127}}";
+            int switchResult = APMDllImport.SetReportSwitch(switchMsg);
+            Console.WriteLine("SetReportSwitch: " + switchResult);
 
             //3.设置基础数据
             var baseInfo = new BaseInfo();
@@ -55,6 +62,9 @@ namespace APMTestDemo
             string text2 = Marshal.PtrToStringAnsi(ptrPerfor, len);
             Marshal.FreeHGlobal(ptrPerfor);
             Console.WriteLine("BuildPerformanceData: " + text2);
+
+
+            //异常日志接收 测试地址：https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log
         }
 
         /// <summary>

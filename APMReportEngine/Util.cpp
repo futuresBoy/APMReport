@@ -1,21 +1,24 @@
-
+#include "APMBasic.h"
 #include "Util.h"
+#include "random_generator.h"
 #include <random>
 
 namespace APMReport
 {
-	//AES密钥
+	
 	std::string Util::g_AESKey;
-	//加密后的AES密钥
 	std::string Util::g_cipherAESKey;
 
-	//（服务端）密钥编号
+	//（服务端）默认密钥编号
 	static std::string g_keyID = "6758ae5bcabf52bf1016a6803b846db5";
-	//（服务端）RSA公钥
+	//（服务端）默认RSA公钥，预防服务端密钥获取失败
 	static std::string g_RSAPubkey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB";
 
-	// 采样字符集
-	static constexpr char CCH[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	std::string Util::GetRandomUUID()
+	{
+		RandomGeneratorImpl random;
+		return random.uuid();
+	}
 
 	std::string Util::GetTimeNowStr()
 	{
@@ -29,7 +32,7 @@ namespace APMReport
 	{
 		if (g_keyID.empty() || g_RSAPubkey.empty())
 		{
-			return -1;
+			return ERROR_CODE_PARAMS;
 		}
 		keyID = g_keyID;
 		pubKey = g_RSAPubkey;
@@ -41,7 +44,7 @@ namespace APMReport
 		if (keyID == nullptr || keyID == "" || rsaPubkey == nullptr || rsaPubkey == "")
 		{
 			LOGERROR("rsa public key is empty!");
-			return -1;
+			return ERROR_CODE_PARAMS;
 		}
 
 		std::string pubKeyID(keyID);
@@ -54,7 +57,7 @@ namespace APMReport
 		auto cipherText = RSAEncrypt(aesKey);
 		if (cipherText.empty())
 		{
-			return -1;
+			return ERROR_CODE_DATA_ENCRYPT;
 		}
 		g_cipherAESKey = cipherText;
 		return 0;
@@ -115,7 +118,7 @@ namespace APMReport
 		int result = AesEncrypt(plainText, cipherStr);
 		if (result != 0)
 		{
-			return -1;
+			return ERROR_CODE_DATA_ENCRYPT;
 		}
 		outLen = cipherStr.length();
 		memcpy(cipherText, cipherStr.c_str(), outLen);
@@ -142,7 +145,7 @@ namespace APMReport
 		catch (const std::exception & ex)
 		{
 			LOGFATAL(ex.what());
-			return -1;
+			return ERROR_CODE_INNEREXCEPTION;
 		}
 	}
 

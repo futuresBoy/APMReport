@@ -1,25 +1,24 @@
 #include "json/json.h"
 #include "Logger.h"
 #include "Util.h"
+#include "APMBasic.h"
 #include "APMReport.h"
-#include "ReportManager.h"
+#include "APMReportManager.h"
+#include "BasicInfo.h"
 
-#define SDKVERSION "1.0.0.2"
-
-//各appID对应的基础数据
-std::map<std::string, std::string> _appBaseInfoMap;
+using namespace APMReport;
 
 APM_REPORT_API int InitLogger(LogFunc funcLog)
 {
 	InitLog(funcLog);
-	LOGINFO("InitLogger.");
+	LOGINFO("InitLogger.",SDKVERSION);
 	return 0;
 }
 
 APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
 {
 	InitLog(funcLog);
-	return APMReport::TaskManager::GetInstance().APMInit(funcPostErrorLog, funcLog);
+	return TaskManager::GetInstance().APMInit(funcPostErrorLog, funcLog);
 }
 
 APM_REPORT_API const char* GetSDKVersion()
@@ -27,12 +26,12 @@ APM_REPORT_API const char* GetSDKVersion()
 	return SDKVERSION;
 }
 
-APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& length)
+APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& length)
 {
 	if (baseInfo == nullptr || baseInfo == "")
 	{
 		LOGERROR("baseInfo is null or empty.");
-		return -1;
+		return ERROR_CODE_PARAMS;
 	}
 
 	try
@@ -42,63 +41,64 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 		if (!reader.parse(baseInfo, base))
 		{
 			LOGERROR("baseInfo is not json.");
-			return -1;
+			return ERROR_CODE_DATA_JSON;
 		}
 		std::string appID = base["app_id"].asString();
 		if (appID.empty())
 		{
 			LOGERROR("app_id is null or empty.");
-			return -1;
+			return ERROR_CODE_DATA_JSON;
 		}
 		std::string uuid = base["d_uuid"].asString();
 		if (uuid.empty())
 		{
 			LOGERROR("d_uuid is null or empty.");
-			return -1;
+			return ERROR_CODE_DATA_JSON;
 		}
+		g_deviceUUID = uuid;
 		base.removeMember("d_uuid");
 		base["s_ver"] = SDKVERSION;
 
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		auto baseStr = jsonWriter.write(base);
-		std::string appInfoMD5 = APMReport::Util::MD5(baseStr);
+		std::string appInfoMD5 = Util::MD5(baseStr);
 		if (appInfoMD5.empty())
 		{
 			LOGERROR("baseInfo to MD5 Error.");
-			return -1;
+			return ERROR_CODE_DATA_ENCODE;
 		}
-		_appBaseInfoMap.insert_or_assign(appID, appInfoMD5);
-
+		g_mapAppBaseInfoMD5.insert_or_assign(appID, appInfoMD5);
+		
 		//基础信息，该字段需要加密+base64转码传输
 		std::string encodeBaseInfo;
-		if (APMReport::Util::AesEncrypt(baseStr, encodeBaseInfo) < 0)
+		if (Util::AesEncrypt(baseStr, encodeBaseInfo) < 0)
 		{
 			LOGERROR("AesEncrypt baseInfo Error.");
-			return -1;
+			return ERROR_CODE_DATA_ENCRYPT;
 		}
 
 		std::string keyID, pubKey;
-		if (APMReport::Util::GetRSAPubKey(keyID, pubKey) < 0)
+		if (Util::GetRSAPubKey(keyID, pubKey) < 0)
 		{
 			LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
-			return -1;
+			return ERROR_CODE_DATA_NULLKEY;
 		}
 
 		Json::Value root;
 		root["app_id"] = appID;
 		root["d_uuid"] = uuid;
 		root["key_id"] = keyID;
-		root["a_key"] = APMReport::Util::g_cipherAESKey;
+		root["a_key"] = Util::g_cipherAESKey;
 		root["base_md5"] = appInfoMD5;
-		root["logtime"] = APMReport::Util::GetTimeNowStr();
+		root["logtime"] = Util::GetTimeNowStr();
 		root["base_info"] = encodeBaseInfo;
 		std::string jsonStr = jsonWriter.write(root);
 
 		if (jsonStr.length() >= length)
 		{
 			length = jsonStr.length() + 1;
-			return -2;
+			return ERROR_CODE_OUTOFSIZE;
 		}
 		length = jsonStr.length() + 1;
 		memcpy(outJosn, jsonStr.c_str(), length);
@@ -106,7 +106,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int& lengt
 	catch (const std::exception & e)
 	{
 		LOGFATAL(e.what());
-		return -1;
+		return ERROR_CODE_INNEREXCEPTION;
 	}
 	return 0;
 }
@@ -116,9 +116,9 @@ APM_REPORT_API int SetReportConfig(const char* msg)
 	if (msg == nullptr || msg == "")
 	{
 		LOGERROR("message is null or empty.");
-		return -1;
+		return ERROR_CODE_PARAMS;
 	}
-	return APMReport::TaskManager::GetInstance().LoadConfig(msg);
+	return TaskManager::GetInstance().LoadThresholdConfig(msg);
 }
 
 APM_REPORT_API int SetReportSwitch(const char* msg)
@@ -126,61 +126,57 @@ APM_REPORT_API int SetReportSwitch(const char* msg)
 	if (msg == nullptr || msg == "")
 	{
 		LOGERROR("message is null or empty.");
-		return -1;
+		return ERROR_CODE_PARAMS;
 	}
-	return APMReport::TaskManager::GetInstance().LoadSwitch(msg);
-}
-
-APM_REPORT_API int AddErrorLog(const char* json)
-{
-	return 0;
+	return TaskManager::GetInstance().LoadSwitch(msg);
 }
 
 APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 {
-	return APMReport::Util::SetRSAPubKey(pubKeyID, pubKey);
+	return Util::SetRSAPubKey(pubKeyID, pubKey);
 }
 
-APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int& length)
+
+APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int32_t& length)
 {
 	if (appID == nullptr || appID == "")
 	{
 		LOGERROR("appID is null or empty.");
-		return -1;
+		return ERROR_CODE_PARAMS;
 	}
 	if (msg == nullptr || msg == "")
 	{
 		LOGERROR("msg is null or empty.");
-		return -1;
+		return ERROR_CODE_PARAMS;
 	}
 
 	try
 	{
 		//指标数组，该字段内容需要压缩+加密
 		std::string data(msg);
-		std::string zipData = APMReport::Util::GzipCompress(data);
+		std::string zipData = Util::GzipCompress(data);
 		std::string metrics;
-		APMReport::Util::AesEncrypt(zipData, metrics);
+		Util::AesEncrypt(zipData, metrics);
 
 		std::string keyID, pubKey;
-		if (APMReport::Util::GetRSAPubKey(keyID, pubKey) < 0)
+		if (Util::GetRSAPubKey(keyID, pubKey) < 0)
 		{
 			LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
-			return -1;
+			return ERROR_CODE_DATA_NULLKEY;
 		}
 
-		std::string appStr = std::string(appID);
-		auto iter = _appBaseInfoMap.find(appStr);
-		if (iter == _appBaseInfoMap.end())
+		std::string appStr(appID);
+		auto iter = g_mapAppBaseInfoMD5.find(appStr);
+		if (iter == g_mapAppBaseInfoMD5.end())
 		{
 			LOGERROR("appID can not find, please set clientInfo first.");
-			return -1;
+			return ERROR_CODE_NULLCLIENTINFO;
 		}
 
 		Json::Value root;
 		root["app_id"] = appID;
 		root["key_id"] = keyID;
-		root["a_key"] = APMReport::Util::g_cipherAESKey;
+		root["a_key"] = Util::g_cipherAESKey;
 		root["base_md5"] = iter->second;
 		root["metrics"] = metrics;
 		auto jsonWriter = Json::FastWriter();
@@ -189,7 +185,7 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 		if (jsonStr.length() >= length)
 		{
 			length = jsonStr.length() + 1;
-			return -2;
+			return ERROR_CODE_OUTOFSIZE;
 		}
 		length = jsonStr.length() + 1;
 		memcpy(outText, jsonStr.c_str(), length);
@@ -197,8 +193,114 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 	catch (const std::exception & e)
 	{
 		LOGFATAL(e.what());
-		return -1;
+		return ERROR_CODE_INNEREXCEPTION;
 	}
 	return 0;
 }
 
+APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const char* userAccount)
+{
+	return User::SetUserInfo(userID, userName, userAccount);
+}
+
+
+APM_REPORT_API int AddErrorLog(const char* appID, const char* json)
+{
+	return 0;
+}
+
+APM_REPORT_API int GetTraceID(char* outBuffer, int32_t& length)
+{
+	if (outBuffer == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	try
+	{
+		//skywalking的traceID格式
+		std::string uuid = Util::GetRandomUUID();
+
+		if (uuid.length() >= length)
+		{
+			length = uuid.length() + 1;
+			return ERROR_CODE_OUTOFSIZE;
+		}
+		length = uuid.length() + 1;
+		memcpy(outBuffer, uuid.c_str(), length);
+		return 0;
+	}
+	catch (const std::exception & e)
+	{
+		LOGFATAL(e.what());
+		return ERROR_CODE_INNEREXCEPTION;
+	}
+}
+
+APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length)
+{
+	if (outBuffer == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	if (traceID == nullptr || traceID == "")
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	try
+	{
+		std::string strTraceID(traceID);
+		auto header = "trace_id:" + strTraceID + "\r\nspan_id:" + "0\r\n";
+		if (header.length() >= length)
+		{
+			length = header.length() + 1;
+			return ERROR_CODE_OUTOFSIZE;
+		}
+		length = header.length() + 1;
+		memcpy(outBuffer, header.c_str(), length);
+		return 0;
+	}
+	catch (const std::exception & e)
+	{
+		LOGFATAL(e.what());
+		return ERROR_CODE_INNEREXCEPTION;
+	}
+}
+
+
+APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, bool isSucceed, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+{
+	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	auto traceID = Util::GetRandomUUID();
+	auto result = isSucceed ? "Y" : "N";	//Yes or No
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+}
+
+APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+{
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+}
+
+APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+{
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+}
+
+APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+{
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+}
