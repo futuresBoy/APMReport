@@ -11,9 +11,6 @@ namespace APMReport
 	//各appID对应的基础信息
 	static std::map<std::string, std::string> g_mapAppBaseInfoMD5;
 
-	//当前用户信息
-	static UserInfo g_userInfo;
-
 	struct UserInfo
 	{
 		std::string m_sUserID;
@@ -28,6 +25,9 @@ namespace APMReport
 		/*设置用户基础信息*/
 		static int SetUserInfo(const char* sUserID, const char* sUserName, const char* sUserAccount);
 		static UserInfo GetUserInfo();
+	private:
+		//当前用户信息
+		static UserInfo g_userInfo;
 	};
 }
 

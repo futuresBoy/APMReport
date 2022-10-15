@@ -5,8 +5,6 @@
 
 namespace APMReport
 {
-	UserInfo g_userInfo;
-
 	int User::SetUserInfo(const char* sUserID, const char* sUserName, const char* sUserAccount)
 	{
 		if (nullptr == sUserID || sUserID == "")
@@ -37,10 +35,6 @@ namespace APMReport
 
 	UserInfo User::GetUserInfo()
 	{
-		if (g_userInfo == nullptr)
-		{
-			return UserInfo();
-		}
 		return g_userInfo;
 	}
 }
