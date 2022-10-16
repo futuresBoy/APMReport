@@ -36,3 +36,4 @@
 /*业务类提示*/
 #define ERROR_CODE_SWITCHOFF 1		//开关关闭
 #define ERROR_CODE_OUTOFCACHE 2		//超出缓存最大条数
+#define ERROR_CODE_LOGREPEATED 2	//日志重复

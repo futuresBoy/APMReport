@@ -16,12 +16,18 @@ namespace APMTestDemo
         //日志打印回调（SDK调用过程中不能被释放，不然无法接受日志回调）
         static APMDllImport.APMLogFunc logFunc;
 
+        static APMDllImport.PostErrorLogFunc postLogFunc;
+
         public void Go()
         {
             //0.初始化日志
             logFunc = OnLogNotify;
             APMDllImport.InitLogger(logFunc);
             Console.WriteLine("InitLogger.");
+
+            //0.初始化SDK
+            postLogFunc = OnPostLogNotify;
+            int init= APMDllImport.APMInit(postLogFunc,logFunc);
 
             //1.获取SDK版本
             IntPtr ptr = APMDllImport.GetSDKVersion();
@@ -65,6 +71,9 @@ namespace APMTestDemo
 
 
             //异常日志接收 测试地址：https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log
+            string errorMsg = "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            APMDllImport.AddErrorLog("APMTestDemo", errorMsg);
+            APMDllImport.AddTraceLog("APMTestDemo", "Demo", "Go", "-1", 1, false, errorMsg.ToArray(), new int[] { errorMsg.Length }, 1);
         }
 
         /// <summary>
@@ -77,6 +86,10 @@ namespace APMTestDemo
             Console.WriteLine($"level:[{level}] message:{message}");
         }
 
+        public static void OnPostLogNotify(string message, int length,string url)
+        {
+            Console.WriteLine($"message:{message}");
+        }
     }
 
     /// <summary>

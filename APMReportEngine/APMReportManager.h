@@ -101,14 +101,13 @@ namespace APMReport
 	class TaskManager
 	{
 	public:
-		TaskManager() : m_funcPostErrorInfo(nullptr), m_funcReplyLog(nullptr) { m_bInited = false;m_pThread = nullptr; };
+		TaskManager() : m_funcPostErrorInfo(nullptr){ m_bInited = false;m_pThread = nullptr; };
 		virtual ~TaskManager();
 		static TaskManager& GetInstance();
 	public:
 		/*1.初始化*/
 		int APMInit(
-			PostErrorLogFunc funcPostErrorInfo,		//通知上传错误信息
-			LogFunc funcLog							//日志打印函数
+			PostErrorLogFunc funcPostErrorInfo		//通知上传错误信息
 		);
 
 		/*2.加载阈值配置*/
@@ -125,7 +124,7 @@ namespace APMReport
 		*/
 		int GetResponseData(const char* msg, Json::Value& data);
 
-		void AddErrorLog(const char* logMessage);
+		int AddErrorLog(const char* logMessage);
 
 		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount);
 		//添加链路日志
@@ -133,7 +132,6 @@ namespace APMReport
 
 	public:
 		PostErrorLogFunc m_funcPostErrorInfo;
-		LogFunc m_funcReplyLog;
 
 	private:
 		/*构建上报后台的日志数据*/

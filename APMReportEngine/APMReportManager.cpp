@@ -29,16 +29,13 @@ namespace APMReport
 	}
 
 
-	int APMReport::TaskManager::APMInit(PostErrorLogFunc funcPostErrorInfo, LogFunc funcLog)
+	int APMReport::TaskManager::APMInit(PostErrorLogFunc funcPostErrorInfo)
 	{
-		if (nullptr != funcPostErrorInfo)
+		if (nullptr == funcPostErrorInfo)
 		{
-			m_funcPostErrorInfo = funcPostErrorInfo;
+			return ERROR_CODE_PARAMS;
 		}
-		if (nullptr != funcLog)
-		{
-			m_funcReplyLog = funcLog;
-		}
+		m_funcPostErrorInfo = funcPostErrorInfo;
 		if (m_bInited || m_pThread != nullptr)
 		{
 			LOGWARN("Inited Aready!");
@@ -72,7 +69,7 @@ namespace APMReport
 			}
 
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -92,7 +89,7 @@ namespace APMReport
 				return result;
 			}
 			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-			if (g_reportTask.LoadSwitch(msg))
+			if (g_reportTask.LoadSwitch(data))
 			{
 				return 0;
 			}
@@ -170,7 +167,7 @@ namespace APMReport
 	}
 
 
-	void TaskManager::AddErrorLog(const char* logMessage)
+	int TaskManager::AddErrorLog(const char* logMessage)
 	{
 		std::string strMessage(logMessage);
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
@@ -180,10 +177,11 @@ namespace APMReport
 			//过滤重复日志
 			if (i == strMessage)
 			{
-				return;
+				return ERROR_CODE_LOGREPEATED;
 			}
 		}
 		m_veclogMsgs.push_back(strMessage);
+		return 0;
 	}
 
 	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount)
@@ -201,7 +199,7 @@ namespace APMReport
 			}
 			return AddTraceLog(traceID, moduleName, subName, result, errorCode, monitorType, vecMsg);
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGFATAL(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -323,8 +321,10 @@ namespace APMReport
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		std::string output = jsonWriter.write(root);
-
-		m_funcPostErrorInfo(output.c_str(), output.length(), "");
+		if (nullptr != m_funcPostErrorInfo)
+		{
+			m_funcPostErrorInfo(output.c_str(), output.length(), "");
+		}
 		return 0;
 	}
 }

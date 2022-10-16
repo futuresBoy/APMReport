@@ -30,7 +30,7 @@ extern "C"
 	*	参数：url 上传的Url地址
 	*/
 
-	typedef int(*PostErrorLogFunc)(const char* msg, unsigned int length, const char* url);
+	typedef int32_t(*PostErrorLogFunc)(const char* msg, int32_t length, const char* url);
 
 	/*
 	*	函数名：LogFunc
@@ -48,7 +48,7 @@ extern "C"
 	APM_REPORT_API int32_t InitLogger(LogFunc funcLog);
 
 	/*
-		功能：发送模块初始化
+		功能：SDK初始化
 		参数：funcPostErrorLog 通知上传错误信息
 		参数：funcLog 内部日志输出通知
 		返回值：0 成功，-1 异常

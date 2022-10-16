@@ -12,11 +12,6 @@ void InitLog(LogFunc logger)
 	g_logger = logger;
 }
 
-void AddLog(const char* msg)
-{
-
-}
-
 void AddLog(LogLevel level, const char* file, const char* func, unsigned int line, const char* msg, ...)
 {
 	if (nullptr == g_logger)

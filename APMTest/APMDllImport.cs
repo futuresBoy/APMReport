@@ -20,11 +20,26 @@ namespace APMTestDemo
         public delegate void APMLogFunc(string message, int level);
 
         /// <summary>
-        /// 获取SDK版本
+        /// 上报异常日志回调函数
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="level"></param>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public delegate void PostErrorLogFunc(string message, int length, string url);
+
+        /// <summary>
+        /// 初始化SDK日志
         /// </summary>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern void InitLogger(APMLogFunc logFunc);
+        public static extern int InitLogger(APMLogFunc logFunc);
+
+        /// <summary>
+        /// SDK初始化
+        /// </summary>
+        /// <param name="logFunc"></param>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int APMInit(PostErrorLogFunc postLogFunc, APMLogFunc logFunc);
 
         /// <summary>
         /// 获取SDK版本
@@ -83,8 +98,16 @@ namespace APMTestDemo
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
-        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern int AddErrorLog(string msg);
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int AddErrorLog(string appID, string msg);
+
+        /// <summary>
+        /// 添加错误日志
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int AddTraceLog(string appID, string moduleName, string subName, string errorCode, int monitorType, bool isSucceed, char[] msgArray, int[] msgLengthArray, int arrayCount);
 
     }
 }

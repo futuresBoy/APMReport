@@ -18,7 +18,7 @@ APM_REPORT_API int InitLogger(LogFunc funcLog)
 APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
 {
 	InitLog(funcLog);
-	return TaskManager::GetInstance().APMInit(funcPostErrorLog, funcLog);
+	return TaskManager::GetInstance().APMInit(funcPostErrorLog);
 }
 
 APM_REPORT_API const char* GetSDKVersion()
@@ -206,7 +206,7 @@ APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const c
 
 APM_REPORT_API int AddErrorLog(const char* appID, const char* json)
 {
-	return 0;
+	return TaskManager::GetInstance().AddErrorLog(json);
 }
 
 APM_REPORT_API int GetTraceID(char* outBuffer, int32_t& length)
