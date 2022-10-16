@@ -43,7 +43,7 @@ namespace APMReport
 		}
 		m_bInited = true;
 		m_bThreadExit = false;
-		m_pThread = new std::thread();
+		m_pThread = new std::thread([this] { this->TaskManager::ProcessLogDataReport(g_reportTask); });
 		LOGINFO("Init finished!");
 		return 0;
 	}
