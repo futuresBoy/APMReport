@@ -101,7 +101,7 @@ namespace APMReport
 	class TaskManager
 	{
 	public:
-		TaskManager() : m_funcPostErrorInfo(nullptr) { m_bInited = false; };
+		TaskManager() : m_funcPostErrorInfo(nullptr), m_funcReplyLog(nullptr) { m_bInited = false;m_pThread = nullptr; };
 		virtual ~TaskManager();
 		static TaskManager& GetInstance();
 	public:
@@ -155,6 +155,7 @@ namespace APMReport
 		//读取或修改配置及日志时锁定
 		std::recursive_mutex m_reportMutex;
 		std::thread* m_pThread;
+		//线程退出
 		volatile bool m_bThreadExit;
 		std::vector<std::string> m_veclogMsgs;
 	};

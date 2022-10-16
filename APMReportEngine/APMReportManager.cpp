@@ -172,16 +172,18 @@ namespace APMReport
 
 	void TaskManager::AddErrorLog(const char* logMessage)
 	{
-		std::string ss(logMessage);
+		std::string strMessage(logMessage);
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		//容错处理：1.预防上层客户端短时间内重复发送错误日志
 		for (auto i : m_veclogMsgs)
 		{
 			//过滤重复日志
-			i == ss;
-			return;
+			if (i == strMessage)
+			{
+				return;
+			}
 		}
-		m_veclogMsgs.push_back(ss);
+		m_veclogMsgs.push_back(strMessage);
 	}
 
 	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount)
@@ -321,6 +323,8 @@ namespace APMReport
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		std::string output = jsonWriter.write(root);
+
 		m_funcPostErrorInfo(output.c_str(), output.length(), "");
+		return 0;
 	}
 }
