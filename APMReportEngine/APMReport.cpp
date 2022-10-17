@@ -2,9 +2,10 @@
 #include "Logger.h"
 #include "Util.h"
 #include "APMBasic.h"
+#include "APMCryptogram.h"
 #include "APMReport.h"
 #include "APMReportManager.h"
-#include "BasicInfo.h"
+#include "ClientBasicInfo.h"
 
 using namespace APMReport;
 
@@ -62,7 +63,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		auto baseStr = jsonWriter.write(base);
-		std::string appInfoMD5 = Util::MD5(baseStr);
+		std::string appInfoMD5 = APMCryptogram::MD5(baseStr);
 		if (appInfoMD5.empty())
 		{
 			LOGERROR("baseInfo to MD5 Error.");
@@ -72,14 +73,14 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 		
 		//基础信息，该字段需要加密+base64转码传输
 		std::string encodeBaseInfo;
-		if (Util::AesEncrypt(baseStr, encodeBaseInfo) < 0)
+		if (APMCryptogram::AesEncrypt(baseStr, encodeBaseInfo) < 0)
 		{
 			LOGERROR("AesEncrypt baseInfo Error.");
 			return ERROR_CODE_DATA_ENCRYPT;
 		}
 
 		std::string keyID, pubKey;
-		if (Util::GetRSAPubKey(keyID, pubKey) < 0)
+		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
 		{
 			LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
 			return ERROR_CODE_DATA_NULLKEY;
@@ -89,7 +90,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 		root["app_id"] = appID;
 		root["d_uuid"] = uuid;
 		root["key_id"] = keyID;
-		root["a_key"] = Util::g_cipherAESKey;
+		root["a_key"] = APMCryptogram::g_cipherAESKey;
 		root["base_md5"] = appInfoMD5;
 		root["logtime"] = Util::GetTimeNowStr();
 		root["base_info"] = encodeBaseInfo;
@@ -133,7 +134,7 @@ APM_REPORT_API int SetReportSwitch(const char* msg)
 
 APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 {
-	return Util::SetRSAPubKey(pubKeyID, pubKey);
+	return APMCryptogram::SetRSAPubKey(pubKeyID, pubKey);
 }
 
 
@@ -154,12 +155,12 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 	{
 		//指标数组，该字段内容需要压缩+加密
 		std::string data(msg);
-		std::string zipData = Util::GzipCompress(data);
+		std::string zipData = APMCryptogram::GzipCompress(data);
 		std::string metrics;
-		Util::AesEncrypt(zipData, metrics);
+		APMCryptogram::AesEncrypt(zipData, metrics);
 
 		std::string keyID, pubKey;
-		if (Util::GetRSAPubKey(keyID, pubKey) < 0)
+		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
 		{
 			LOGERROR("RSAPubkey is empty ,should set RSA public key first.");
 			return ERROR_CODE_DATA_NULLKEY;
@@ -176,7 +177,7 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 		Json::Value root;
 		root["app_id"] = appID;
 		root["key_id"] = keyID;
-		root["a_key"] = Util::g_cipherAESKey;
+		root["a_key"] = APMCryptogram::g_cipherAESKey;
 		root["base_md5"] = iter->second;
 		root["metrics"] = metrics;
 		auto jsonWriter = Json::FastWriter();

@@ -45,7 +45,10 @@
     <ClInclude Include="APMBasic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BasicInfo.h">
+    <ClInclude Include="APMCryptogram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientBasicInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,7 +71,10 @@
     <ClCompile Include="APMReportManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BasicInfo.cpp">
+    <ClCompile Include="APMCryptogram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientBasicInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,8 +1,9 @@
 #include "Logger.h"
 #include "APMBasic.h"
+#include "APMCryptogram.h"
 #include "APMReportManager.h"
 #include "Util.h"
-#include "BasicInfo.h"
+#include "ClientBasicInfo.h"
 
 namespace APMReport
 {
@@ -62,7 +63,7 @@ namespace APMReport
 			//设置程序的RSA公钥
 			std::string pubKeyID = data["pub_key_id"].asString();
 			std::string pubKey = data["pub_key"].asString();
-			result = APMReport::Util::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
+			result = APMReport::APMCryptogram::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
 			if (result != 0)
 			{
 				return result;
@@ -300,7 +301,7 @@ namespace APMReport
 		root["app_id"] = "";
 		root["d_uuid"] = g_deviceUUID;
 		std::string keyID, pubKey;
-		if (Util::GetRSAPubKey(keyID, pubKey) < 0)
+		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
 		{
 			return ERROR_CODE_DATA_NULLKEY;
 		}
