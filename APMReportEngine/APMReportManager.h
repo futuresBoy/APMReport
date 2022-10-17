@@ -101,7 +101,7 @@ namespace APMReport
 	class TaskManager
 	{
 	public:
-		TaskManager() : m_funcPostErrorInfo(nullptr){ m_bInited = false;m_pThread = nullptr; };
+		TaskManager();
 		virtual ~TaskManager();
 		static TaskManager& GetInstance();
 	public:
@@ -125,7 +125,7 @@ namespace APMReport
 		int GetResponseData(const char* msg, Json::Value& data);
 
 		int AddErrorLog(const char* logMessage);
-
+		//添加链路日志
 		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount);
 		//添加链路日志
 		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const std::vector<std::string>& msgs);
@@ -152,9 +152,11 @@ namespace APMReport
 		bool m_bInited;
 		//读取或修改配置及日志时锁定
 		std::recursive_mutex m_reportMutex;
+		//后台处理日志线程
 		std::thread* m_pThread;
 		//线程退出
 		volatile bool m_bThreadExit;
+		//收集日志数组
 		std::vector<std::string> m_veclogMsgs;
 	};
 

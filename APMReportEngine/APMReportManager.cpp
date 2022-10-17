@@ -17,6 +17,13 @@ namespace APMReport
 		return g_manager;
 	}
 
+	TaskManager::TaskManager()
+	{
+		m_funcPostErrorInfo = nullptr;
+		m_pThread = nullptr;
+		m_bInited = false;
+	}
+
 	APMReport::TaskManager::~TaskManager()
 	{
 		if (m_pThread)
