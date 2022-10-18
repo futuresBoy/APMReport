@@ -77,7 +77,7 @@ namespace APMReport
 			}
 
 		}
-		catch (const std::exception& e)
+		catch (const std::exception & e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -192,7 +192,7 @@ namespace APMReport
 		return 0;
 	}
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* msgArray, int* msgLengthArray, int arrayCount)
 	{
 		try
 		{
@@ -205,9 +205,9 @@ namespace APMReport
 				vecMsg.push_back(strMsgs.substr(j, msgLengthArray[i]));
 				j += msgLengthArray[i];
 			}
-			return AddTraceLog(traceID, moduleName, subName, result, errorCode, monitorType, vecMsg);
+			return AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, vecMsg);
 		}
-		catch (const std::exception& e)
+		catch (const std::exception & e)
 		{
 			LOGFATAL(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -215,7 +215,7 @@ namespace APMReport
 	}
 
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const std::vector<std::string>& msgs)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		//（后台）采集开关关闭
@@ -231,7 +231,13 @@ namespace APMReport
 			UploadLogMessage();
 			return ERROR_CODE_OUTOFCACHE;
 		}
-		BuidLogData(traceID, moduleName, subName, result, errorCode, monitorType, msgs);
+		std::string data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msgs);
+		if (data.empty())
+		{
+			return ERROR_CODE_DATA;
+		}
+		m_veclogMsgs.push_back(data);
+
 		//到达阈值条数上报
 		if (m_veclogMsgs.size() > g_reportTask.m_config.m_nSendCache)
 		{
@@ -241,28 +247,33 @@ namespace APMReport
 	}
 
 
-	void TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const std::vector<std::string>& msgs)
+	std::string TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
 	{
 		Json::Value span;
 		span["logtime"] = Util::GetTimeNowStr();
-		span["module"] = monitorType;
+		span["module"] = ConvertModuleText(moduleType);
 		span["trace_id"] = traceID;
 		//客户端为发起方，spanid为0
 		span["span_id"] = "0";
 		auto userInfo = User::GetUserInfo();
+		//账户登录前的异常上报，此时允许userID为空
+		if (userInfo.m_sUserID.empty())
+		{
+			LOGWARN("userID is empty,please invoke SetUserInfo() ");
+		}
 		span["userId"] = userInfo.m_sUserID;
 		span["reslut"] = result;
 		span["code"] = errorCode;
-		span["businessname"] = moduleName;
+		span["business"] = moduleName;
 		span["subname"] = subName;
 		for (int i = 0; i < msgs.size(); i++)
 		{
-			span["output_0"].append(msgs[i]);
+			span["msgs"].append(msgs[i]);
 		}
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 		std::string jsonStr = jsonWriter.write(span);
-		m_veclogMsgs.push_back(jsonStr);
+		return jsonStr;
 	}
 
 	void TaskManager::ProcessLogDataReport(Task task)
@@ -305,8 +316,15 @@ namespace APMReport
 			return 0;
 		}
 		Json::Value root;
-		root["app_id"] = "";
-		root["d_uuid"] = g_deviceUUID;
+		auto baseInfo = Client::GetBaseInfoMap();
+		auto iter = baseInfo.begin();
+		if (iter == baseInfo.end())
+		{
+			LOGERROR("appID can not find, please set clientInfo first.");
+			return ERROR_CODE_NULLCLIENTINFO;
+		}
+		root["app_id"] = iter->first;
+		root["d_uuid"] = Client::GetDeviceUUID();
 		std::string keyID, pubKey;
 		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
 		{
@@ -314,13 +332,6 @@ namespace APMReport
 		}
 		root["key_id"] = keyID;
 		root["a_key"] = pubKey;
-
-		auto iter = g_mapAppBaseInfoMD5.find("app_id");
-		if (iter == g_mapAppBaseInfoMD5.end())
-		{
-			LOGERROR("appID can not find, please set clientInfo first.");
-			return ERROR_CODE_NULLCLIENTINFO;
-		}
 		root["base_md5"] = iter->second;
 		for (auto msg : m_veclogMsgs)
 		{
@@ -334,5 +345,28 @@ namespace APMReport
 			m_funcPostErrorInfo(output.c_str(), output.length(), "");
 		}
 		return 0;
+	}
+
+	std::string TaskManager::ConvertModuleText(int moduleType)
+	{
+		switch (moduleType)
+		{
+		case DATA_MODULE_UNKNOW:
+		case DATA_MODULE_CPU_MEMORY:
+			return "pc";
+		case DATA_MODULE_CATON:
+			return "pc-caton";
+		case DATA_MODULE_CRASH:
+			return "pc-crash";
+		case DATA_MODULE_HTTP:
+			return "pc-http";
+		case DATA_MODULE_TCP:
+			return "pc-tcp";
+		case DATA_MODULE_WEB:
+			return "pc-web";
+		default:
+			break;
+		}
+		return "pc";
 	}
 }

@@ -93,6 +93,15 @@ namespace APMTestDemo
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int SetReportSwitch(string json);
 
+
+        /// <summary>
+        /// 设置用户信息
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int SetUserInfo(string userID, string userName,string userAccount);
+
         /// <summary>
         /// 添加错误日志
         /// </summary>

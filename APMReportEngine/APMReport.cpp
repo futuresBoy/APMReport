@@ -12,7 +12,7 @@ using namespace APMReport;
 APM_REPORT_API int InitLogger(LogFunc funcLog)
 {
 	InitLog(funcLog);
-	LOGINFO("InitLogger.",SDKVERSION);
+	LOGINFO("InitLogger.", SDKVERSION);
 	return 0;
 }
 
@@ -56,7 +56,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 			LOGERROR("d_uuid is null or empty.");
 			return ERROR_CODE_DATA_JSON;
 		}
-		g_deviceUUID = uuid;
+		Client::SetDeviceUUID(uuid);
 		base.removeMember("d_uuid");
 		base["s_ver"] = SDKVERSION;
 
@@ -69,8 +69,8 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 			LOGERROR("baseInfo to MD5 Error.");
 			return ERROR_CODE_DATA_ENCODE;
 		}
-		g_mapAppBaseInfoMD5.insert_or_assign(appID, appInfoMD5);
-		
+		Client::SetBaseInfo(appID, appInfoMD5);
+
 		//基础信息，该字段需要加密+base64转码传输
 		std::string encodeBaseInfo;
 		if (APMCryptogram::AesEncrypt(baseStr, encodeBaseInfo) < 0)
@@ -157,7 +157,10 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 		std::string data(msg);
 		std::string zipData = APMCryptogram::GzipCompress(data);
 		std::string metrics;
-		APMCryptogram::AesEncrypt(zipData, metrics);
+		if (APMCryptogram::AesEncrypt(zipData, metrics) != 0)
+		{
+			return ERROR_CODE_DATA_ENCRYPT;
+		}
 
 		std::string keyID, pubKey;
 		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
@@ -166,9 +169,8 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 			return ERROR_CODE_DATA_NULLKEY;
 		}
 
-		std::string appStr(appID);
-		auto iter = g_mapAppBaseInfoMD5.find(appStr);
-		if (iter == g_mapAppBaseInfoMD5.end())
+		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		if (baseInfoMD5.empty())
 		{
 			LOGERROR("appID can not find, please set clientInfo first.");
 			return ERROR_CODE_NULLCLIENTINFO;
@@ -178,7 +180,7 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 		root["app_id"] = appID;
 		root["key_id"] = keyID;
 		root["a_key"] = APMCryptogram::g_cipherAESKey;
-		root["base_md5"] = iter->second;
+		root["base_md5"] = baseInfoMD5;
 		root["metrics"] = metrics;
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
@@ -268,7 +270,7 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 }
 
 
-APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, bool isSucceed, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, bool isSucceed, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
 {
 	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
 	{
@@ -276,32 +278,32 @@ APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const 
 	}
 	auto traceID = Util::GetRandomUUID();
 	auto result = isSucceed ? "Y" : "N";	//Yes or No
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, msgArray, msgLengthArray, arrayCount);
 }
 
-APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
 {
 	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, moduleType, msgArray, msgLengthArray, arrayCount);
 }
 
-APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
 {
 	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, moduleType, msgArray, msgLengthArray, arrayCount);
 }
 
-APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
+APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount)
 {
 	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msgArray == nullptr || msgLengthArray == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, monitorType, msgArray, msgLengthArray, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, moduleType, msgArray, msgLengthArray, arrayCount);
 }

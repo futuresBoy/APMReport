@@ -126,16 +126,19 @@ namespace APMReport
 
 		int AddErrorLog(const char* logMessage);
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const char* msgArray, int* msgLengthArray, int arrayCount);
+		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* msgArray, int* msgLengthArray, int arrayCount);
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const std::vector<std::string>& msgs);
+		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
 
 	public:
 		PostErrorLogFunc m_funcPostErrorInfo;
 
 	private:
 		/*构建上报后台的日志数据*/
-		void BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int monitorType, const std::vector<std::string>& msgs);
+		std::string BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
+
+		/*监控模块定义转换为对应的文本，用于构建后台索引*/
+		std::string ConvertModuleText(int moduleType);
 
 		/*
 			（异常日志/性能信息）定时执行上报

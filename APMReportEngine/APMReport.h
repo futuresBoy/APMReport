@@ -110,9 +110,9 @@ extern "C"
 
 	/*
 		功能：设置用户信息
-		参数：账号userid
-		参数：账户名称/昵称（可为空）
-		参数：账户代码（可为空）
+		参数：账号userid（唯一）
+		参数：账户名称/昵称（不唯一，可为空）
+		参数：账户代码（唯一，可为空）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName,const char* userAccount);
@@ -147,14 +147,22 @@ extern "C"
 		参数：moduleName 模块名称（客户端自己定义）
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码（可客户端自定义）
-		参数：monitorType 监控类别
+		参数：moduleType 监控模块类别（参考APMBasic.h中的模块定义）
 		参数：isSucceed 是否成功
 		参数：msgArray 日志消息数组（可添加多条日志消息）
 		参数：msgLengthArray 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, bool isSucceed, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount);
+	APM_REPORT_API int32_t AddTraceLog(const char* appID, 
+									const char* moduleName, 
+									const char* subName, 
+									const char* errorCode, 
+									int32_t moduleType, 
+									bool isSucceed, 
+									const char* msgArray, 
+									int32_t* msgLengthArray, 
+									int32_t arrayCount);
 
 	/*
 		功能：上传成功日志
@@ -163,13 +171,21 @@ extern "C"
 		参数：moduleName 模块名称（客户端自己定义）
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
-		参数：monitorType 监控类别
+		参数：moduleType 监控模块类别
 		参数：msgArray 日志消息数组（可添加多条日志消息）
 		参数：msgLengthArray 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogOK(const char* appID, 
+									const char* traceID, 
+									const char* moduleName, 
+									const char* subName, 
+									const char* errorCode, 
+									int32_t moduleType, 
+									const char* msgArray, 
+									int32_t* msgLengthArray, 
+									int32_t arrayCount);
 
 	/*
 		功能：上传失败日志
@@ -178,13 +194,21 @@ extern "C"
 		参数：moduleName 模块名称（客户端自己定义）
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
-		参数：monitorType 监控类别
+		参数：moduleType 监控模块类别
 		参数：msgArray 日志消息数组（可添加多条日志消息）
 		参数：msgLengthArray 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogErr(const char* appID, 
+									const char* traceID, 
+									const char* moduleName, 
+									const char* subName, 
+									const char* errorCode, 
+									int32_t moduleType, 
+									const char* msgArray, 
+									int32_t* msgLengthArray, 
+									int32_t arrayCount);
 
 	/*
 		功能：上传超时日志
@@ -193,13 +217,21 @@ extern "C"
 		参数：moduleName 模块名称（客户端自己定义）
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
-		参数：monitorType 监控类别
+		参数：moduleType 监控模块类别
 		参数：msgArray 日志消息数组（可添加多条日志消息）
 		参数：msgLengthArray 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t monitorType, const char* msgArray, int32_t* msgLengthArray, int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogTimeOut(const char* appID, 
+										const char* traceID, 
+										const char* moduleName, 
+										const char* subName, 
+										const char* errorCode, 
+										int32_t moduleType, 
+										const char* msgArray, 
+										int32_t* msgLengthArray, 
+										int32_t arrayCount);
 
 }
 #endif // __cplusplus

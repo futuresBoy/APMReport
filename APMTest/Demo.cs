@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,12 +23,12 @@ namespace APMTestDemo
         {
             //0.初始化日志
             logFunc = OnLogNotify;
-            APMDllImport.InitLogger(logFunc);
-            Console.WriteLine("InitLogger.");
+            //APMDllImport.InitLogger(logFunc);
+            //Console.WriteLine("InitLogger.");
 
             //0.初始化SDK
             postLogFunc = OnPostLogNotify;
-            int init= APMDllImport.APMInit(postLogFunc,logFunc);
+            int init = APMDllImport.APMInit(postLogFunc, logFunc);
 
             //1.获取SDK版本
             IntPtr ptr = APMDllImport.GetSDKVersion();
@@ -70,10 +71,10 @@ namespace APMTestDemo
             Console.WriteLine("BuildPerformanceData: " + text2);
 
 
-            //异常日志接收 测试地址：https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log
-            string errorMsg = "testaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-            APMDllImport.AddErrorLog("APMTestDemo", errorMsg);
-            APMDllImport.AddTraceLog("APMTestDemo", "Demo", "Go", "-1", 1, false, errorMsg.ToArray(), new int[] { errorMsg.Length }, 1);
+            //异常日志接收 
+            string errorMsg = "测试异常数据日志上报文本demo";
+            //APMDllImport.AddErrorLog("APMTestDemo", errorMsg);
+            APMDllImport.AddTraceLog("APMTestDemo", "ClassDemo", "Go()", "-1", 1, false, errorMsg.ToArray(), new int[] { errorMsg.Length }, 1);
         }
 
         /// <summary>
@@ -86,9 +87,30 @@ namespace APMTestDemo
             Console.WriteLine($"level:[{level}] message:{message}");
         }
 
-        public static void OnPostLogNotify(string message, int length,string url)
+        public static async void OnPostLogNotify(string message, int length, string url)
         {
             Console.WriteLine($"message:{message}");
+            try
+            {
+                using (HttpContent content = new StringContent(message))
+                {
+                    //测试地址
+                    HttpClient httpClient = new HttpClient();
+                    var result = await httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log", content);
+                    if (result.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("异常信息上报成功！");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"异常信息上报失败：{result.StatusCode} {result.Content}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"异常信息上报异常：{ex.ToString()}");
+            }
         }
     }
 

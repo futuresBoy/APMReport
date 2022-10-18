@@ -3,7 +3,9 @@
 //版本号
 #define SDKVERSION "1.0.1.1"
 
-/*采集模块定义*/
+/*模块定义*/
+//未指定模块
+#define DATA_MODULE_UNKNOW	0x00000000
 //CPU和内存
 #define DATA_MODULE_CPU_MEMORY	0x00000001
 //启动时间
