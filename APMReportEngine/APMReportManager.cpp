@@ -268,7 +268,7 @@ namespace APMReport
 		span["subname"] = subName;
 		for (int i = 0; i < msgs.size(); i++)
 		{
-			span["msgs"].append(msgs[i]);
+			span["msg"].append(msgs[i]);
 		}
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
@@ -337,8 +337,21 @@ namespace APMReport
 		{
 			root["msgs"].append(msg);
 		}
+		m_veclogMsgs.clear();
+
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
+
+		//对日志数组进行压缩加密处理
+		auto josnMsg = jsonWriter.write(root["msgs"]);
+		std::string zipData = APMCryptogram::GzipCompress(josnMsg);
+		std::string aesMsg;
+		if (APMCryptogram::AesEncrypt(zipData, aesMsg) != 0)
+		{
+			return ERROR_CODE_DATA_ENCRYPT;
+		}
+		root["msgs"] = aesMsg;
+
 		std::string output = jsonWriter.write(root);
 		if (nullptr != m_funcPostErrorInfo)
 		{

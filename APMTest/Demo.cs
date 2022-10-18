@@ -70,11 +70,17 @@ namespace APMTestDemo
             Marshal.FreeHGlobal(ptrPerfor);
             Console.WriteLine("BuildPerformanceData: " + text2);
 
+            //设置用户信息（上传异常日志需要）
+            int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
+            Console.WriteLine("SetUserInfo: " + userInfo);
 
             //异常日志接收 
-            string errorMsg = "测试异常数据日志上报文本demo";
+            //string errorMsg = "测试异常数据日志上报文本demo";
+            string errorMsg = "testsssaatratass";
+            char[] charArray = Encoding.UTF8.GetChars(Encoding.UTF8.GetBytes(errorMsg));
             //APMDllImport.AddErrorLog("APMTestDemo", errorMsg);
-            APMDllImport.AddTraceLog("APMTestDemo", "ClassDemo", "Go()", "-1", 1, false, errorMsg.ToArray(), new int[] { errorMsg.Length }, 1);
+            int addLog = APMDllImport.AddTraceLog(baseInfo.app_id, "ClassDemo", "Go()", "-1", 0, false, charArray, new int[] { charArray.Length }, 1);
+            Console.WriteLine("AddTraceLog: " + addLog);
         }
 
         /// <summary>
@@ -121,7 +127,7 @@ namespace APMTestDemo
     {
         public string app_id { get; set; } = "TestApp";
 
-        public string d_uuid { get; set; } = "00000000";
+        public string d_uuid { get; set; } = "xxxxx-00000000";
 
         public string a_bundle_id { get; set; } = "happ.exe";
 
