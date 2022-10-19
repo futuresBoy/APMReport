@@ -26,7 +26,7 @@ namespace APMReport
 			m_nCacheMaxSize = 100;
 			m_bSendImmediately = false;
 			m_nSendMinInterval = 10;
-			m_nSendMaxInterval = 180;
+			m_nSendMaxInterval = 120;
 			m_nSendCache = 50;
 			m_nRetry = 0;
 		}
@@ -126,7 +126,7 @@ namespace APMReport
 
 		int AddErrorLog(const char* logMessage);
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* msgArray, int* msgLengthArray, int arrayCount);
+		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* ayMsgs, int* arrayStringLength, int arrayCount);
 		//添加链路日志
 		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
 
@@ -135,7 +135,7 @@ namespace APMReport
 
 	private:
 		/*构建上报后台的日志数据*/
-		std::string BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
+		Json::Value BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
 
 		/*监控模块定义转换为对应的文本，用于构建后台索引*/
 		std::string ConvertModuleText(int moduleType);
@@ -160,7 +160,7 @@ namespace APMReport
 		//线程退出
 		volatile bool m_bThreadExit;
 		//收集日志数组
-		std::vector<std::string> m_veclogMsgs;
+		std::vector<Json::Value> m_veclogMsgs;
 	};
 
 

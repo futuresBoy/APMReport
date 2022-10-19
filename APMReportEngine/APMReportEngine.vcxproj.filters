@@ -16,6 +16,9 @@
     <Filter Include="Header Files\Common">
       <UniqueIdentifier>{93b90d62-9ac1-43c9-9739-e419a93e89df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{dabbcb6e-f799-4ba9-a409-562c2a7784a0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="APMReport.h">
@@ -28,9 +31,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="random_generator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="APMReportManager.h">
@@ -51,21 +51,18 @@
     <ClInclude Include="ClientBasicInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="random_generator.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="APMReport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="jsoncpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="random_generator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APMReportManager.cpp">
@@ -76,6 +73,12 @@
     </ClCompile>
     <ClCompile Include="ClientBasicInfo.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jsoncpp.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="random_generator.cc">
+      <Filter>Source Files\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

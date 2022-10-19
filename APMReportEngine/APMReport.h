@@ -54,7 +54,7 @@ extern "C"
 		返回值：0 成功，-1 异常
 	*/
 	APM_REPORT_API int32_t APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog);
-	
+
 	/*
 		功能：获取SDK版本号
 		返回值：SDK版本号
@@ -115,7 +115,7 @@ extern "C"
 		参数：账户代码（唯一，可为空）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName,const char* userAccount);
+	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName, const char* userAccount);
 
 	/*
 		功能：记录（客户端）异常日志
@@ -141,6 +141,8 @@ extern "C"
 	*/
 	APM_REPORT_API int32_t GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length);
 
+#pragma region ClientMonitor版接口
+
 	/*
 		功能：添加日志
 		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
@@ -149,20 +151,20 @@ extern "C"
 		参数：errorCode 错误代码（可客户端自定义）
 		参数：moduleType 监控模块类别（参考APMBasic.h中的模块定义）
 		参数：isSucceed 是否成功
-		参数：msgArray 日志消息数组（可添加多条日志消息）
-		参数：msgLengthArray 每条日志消息对应的长度数组
+		参数：ayMsgs 日志消息数组（可添加多条日志消息）
+		参数：arrayStringLength 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddTraceLog(const char* appID, 
-									const char* moduleName, 
-									const char* subName, 
-									const char* errorCode, 
-									int32_t moduleType, 
-									bool isSucceed, 
-									const char* msgArray, 
-									int32_t* msgLengthArray, 
-									int32_t arrayCount);
+	APM_REPORT_API int32_t AddTraceLog(const char* appID,
+		const char* moduleName,
+		const char* subName,
+		const char* errorCode,
+		int32_t moduleType,
+		bool isSucceed,
+		const char* ayMsgs,
+		int32_t* arrayStringLength,
+		int32_t arrayCount);
 
 	/*
 		功能：上传成功日志
@@ -172,20 +174,20 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：msgArray 日志消息数组（可添加多条日志消息）
-		参数：msgLengthArray 每条日志消息对应的长度数组
+		参数：ayMsgs 日志消息数组（可添加多条日志消息）
+		参数：arrayStringLength 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogOK(const char* appID, 
-									const char* traceID, 
-									const char* moduleName, 
-									const char* subName, 
-									const char* errorCode, 
-									int32_t moduleType, 
-									const char* msgArray, 
-									int32_t* msgLengthArray, 
-									int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogOK(const char* appID,
+		const char* traceID,
+		const char* moduleName,
+		const char* subName,
+		const char* errorCode,
+		int32_t moduleType,
+		const char* ayMsgs,
+		int32_t* arrayStringLength,
+		int32_t arrayCount);
 
 	/*
 		功能：上传失败日志
@@ -195,20 +197,20 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：msgArray 日志消息数组（可添加多条日志消息）
-		参数：msgLengthArray 每条日志消息对应的长度数组
+		参数：ayMsgs 日志消息数组（可添加多条日志消息）
+		参数：arrayStringLength 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogErr(const char* appID, 
-									const char* traceID, 
-									const char* moduleName, 
-									const char* subName, 
-									const char* errorCode, 
-									int32_t moduleType, 
-									const char* msgArray, 
-									int32_t* msgLengthArray, 
-									int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogErr(const char* appID,
+		const char* traceID,
+		const char* moduleName,
+		const char* subName,
+		const char* errorCode,
+		int32_t moduleType,
+		const char* ayMsgs,
+		int32_t* arrayStringLength,
+		int32_t arrayCount);
 
 	/*
 		功能：上传超时日志
@@ -218,20 +220,22 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：msgArray 日志消息数组（可添加多条日志消息）
-		参数：msgLengthArray 每条日志消息对应的长度数组
+		参数：ayMsgs 日志消息数组（可添加多条日志消息）
+		参数：arrayStringLength 每条日志消息对应的长度数组
 		参数：arrayCount 日志消息数组个数
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t TradeLogTimeOut(const char* appID, 
-										const char* traceID, 
-										const char* moduleName, 
-										const char* subName, 
-										const char* errorCode, 
-										int32_t moduleType, 
-										const char* msgArray, 
-										int32_t* msgLengthArray, 
-										int32_t arrayCount);
+	APM_REPORT_API int32_t TradeLogTimeOut(const char* appID,
+		const char* traceID,
+		const char* moduleName,
+		const char* subName,
+		const char* errorCode,
+		int32_t moduleType,
+		const char* ayMsgs,
+		int32_t* arrayStringLength,
+		int32_t arrayCount);
+
+#pragma endregion
 
 }
 #endif // __cplusplus

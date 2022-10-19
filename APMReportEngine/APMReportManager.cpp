@@ -192,18 +192,18 @@ namespace APMReport
 		return 0;
 	}
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* msgArray, int* msgLengthArray, int arrayCount)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* ayMsgs, int* arrayStringLength, int arrayCount)
 	{
 		try
 		{
 			//转换传入的日志数组为字符串列表
-			std::string strMsgs(msgArray);
+			std::string strMsgs(ayMsgs);
 			std::vector<std::string> vecMsg;
 			int j = 0;
 			for (int i = 0; i < arrayCount; i++)
 			{
-				vecMsg.push_back(strMsgs.substr(j, msgLengthArray[i]));
-				j += msgLengthArray[i];
+				vecMsg.push_back(strMsgs.substr(j, arrayStringLength[i]));
+				j += arrayStringLength[i];
 			}
 			return AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, vecMsg);
 		}
@@ -231,7 +231,7 @@ namespace APMReport
 			UploadLogMessage();
 			return ERROR_CODE_OUTOFCACHE;
 		}
-		std::string data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msgs);
+		Json::Value data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msgs);
 		if (data.empty())
 		{
 			return ERROR_CODE_DATA;
@@ -247,7 +247,7 @@ namespace APMReport
 	}
 
 
-	std::string TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
+	Json::Value TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
 	{
 		Json::Value span;
 		span["logtime"] = Util::GetTimeNowStr();
@@ -260,6 +260,7 @@ namespace APMReport
 		if (userInfo.m_sUserID.empty())
 		{
 			LOGWARN("userID is empty,please invoke SetUserInfo() ");
+			return new Json::Value();
 		}
 		span["userId"] = userInfo.m_sUserID;
 		span["reslut"] = result;
@@ -270,10 +271,7 @@ namespace APMReport
 		{
 			span["msg"].append(msgs[i]);
 		}
-		auto jsonWriter = Json::FastWriter();
-		jsonWriter.omitEndingLineFeed();
-		std::string jsonStr = jsonWriter.write(span);
-		return jsonStr;
+		return span;
 	}
 
 	void TaskManager::ProcessLogDataReport(Task task)
@@ -331,7 +329,7 @@ namespace APMReport
 			return ERROR_CODE_DATA_NULLKEY;
 		}
 		root["key_id"] = keyID;
-		root["a_key"] = pubKey;
+		root["a_key"] = APMCryptogram::g_cipherAESKey;
 		root["base_md5"] = iter->second;
 		for (auto msg : m_veclogMsgs)
 		{
