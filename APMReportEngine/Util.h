@@ -24,6 +24,12 @@ namespace APMReport
 		*/
 		static std::string GetTimeNowStr();
 
+		/*
+		功能：截取有效的URL字符串
+		返回：截取后的URL字符串
+		*/
+		static std::string ExtractURL(const std::string& url);
+
 	};
 
 }

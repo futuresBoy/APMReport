@@ -25,7 +25,16 @@ namespace APMTestDemo
         /// <param name="message"></param>
         /// <param name="level"></param>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public delegate void PostErrorLogFunc(string message, int length, string url);
+        public delegate void PostErrorLogFunc(string message, int msgLength, string url, int urlLength);
+
+
+        /// <summary>
+        /// 上报性能信息回调函数
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="level"></param>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public delegate void PostPerformanceFunc(string message, int msgLength, string url, int urlLength);
 
         /// <summary>
         /// 初始化SDK日志
@@ -39,7 +48,7 @@ namespace APMTestDemo
         /// </summary>
         /// <param name="logFunc"></param>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int APMInit(PostErrorLogFunc postLogFunc, APMLogFunc logFunc);
+        public static extern int APMInit(PostErrorLogFunc postLogFunc, PostPerformanceFunc postPerformanceFunc, APMLogFunc logFunc);
 
         /// <summary>
         /// 获取SDK版本
@@ -100,7 +109,16 @@ namespace APMTestDemo
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int SetUserInfo(string userID, string userName,string userAccount);
+        public static extern int SetUserInfo(string userID, string userName, string userAccount);
+
+        /// <summary>
+        /// 添加日志
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int AddTraceLog(string appID, string moduleName, string subName, string errorCode, int monitorType, bool isSucceed, [MarshalAs(UnmanagedType.LPWStr)]string msg);
+
 
         /// <summary>
         /// 添加错误日志
@@ -108,15 +126,16 @@ namespace APMTestDemo
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int AddErrorLog(string appID, string msg);
+        public static extern int AddErrorLog(string appID, string moduleName, string subName, string errorCode, [MarshalAs(UnmanagedType.LPWStr)]string msg);
+
 
         /// <summary>
-        /// 添加错误日志
+        /// 添加HTTP日志
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int AddTraceLog(string appID, string moduleName, string subName, string errorCode, int monitorType, bool isSucceed, char[] msgArray, int[] msgLengthArray, int arrayCount);
+        public static extern int AddHTTPLog(string appID, string moduleName, string url, string errorCode, int costTime, [MarshalAs(UnmanagedType.LPWStr)]string msg);
 
     }
 }

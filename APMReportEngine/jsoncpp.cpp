@@ -4416,6 +4416,7 @@ static String valueToQuotedStringN(const char* value, size_t length,
           appendHex(result, 0xdc00 + (codepoint & 0x3ff));
         }
       }
+        //result += *c;
     } break;
     }
   }

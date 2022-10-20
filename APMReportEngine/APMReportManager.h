@@ -57,7 +57,7 @@ namespace APMReport
 		Task() :m_taskType(TaskType_Null) { m_bCollectSwitch = true, m_bReportSwitch = true; };
 		virtual ~Task() {};
 	public:
-		//加载配置
+		/*加载阈值配置*/
 		virtual bool LoadThresholdConfig(const Json::Value& root);
 
 		/*
@@ -85,9 +85,6 @@ namespace APMReport
 		~ReportErrorTask() {};
 	public:
 		bool LoadThresholdConfig(const Json::Value& root);
-
-		/*功能：加载异常上报的开关*/
-		bool LoadSwitch(const Json::Value& root);
 	};
 
 	/*上报性能数据任务*/
@@ -95,6 +92,8 @@ namespace APMReport
 	{
 	public:
 		ReportPerformanceTask() { m_taskType = TaskType_ReportPerformance; };
+	public:
+		bool LoadThresholdConfig(const Json::Value& root);
 	};
 
 	/*工作任务管理类*/
@@ -107,7 +106,8 @@ namespace APMReport
 	public:
 		/*1.初始化*/
 		int APMInit(
-			PostErrorLogFunc funcPostErrorInfo		//通知上传错误信息
+			PostErrorLogFunc funcPostErrorInfo,		//通知上传错误信息
+			PostPerformanceFunc funcPostPerformance	//通知上传异常信息
 		);
 
 		/*2.加载阈值配置*/
@@ -124,43 +124,65 @@ namespace APMReport
 		*/
 		int GetResponseData(const char* msg, Json::Value& data);
 
-		int AddErrorLog(const char* logMessage);
+		/*创建基础的HTTP请求json结构*/
+		int CreateRequestJson(Json::Value& root);
+
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* ayMsgs, int* arrayStringLength, int arrayCount);
+		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const wchar_t* msg);
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
+		int AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg);
+
+		//添加HTTP日志
+		int AddHTTPLog(const std::string& traceID, const std::string& moduleName, const std::string& url, const std::string& errorCode, int costTime, const wchar_t* msg);
 
 	public:
 		PostErrorLogFunc m_funcPostErrorInfo;
-
+		PostErrorLogFunc m_funcPostPerformance;
 	private:
 		/*构建上报后台的日志数据*/
-		Json::Value BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs);
+		Json::Value BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg);
 
 		/*监控模块定义转换为对应的文本，用于构建后台索引*/
 		std::string ConvertModuleText(int moduleType);
 
 		/*
-			（异常日志/性能信息）定时执行上报
-			参数：task 异常/性能信息上报任务
+			异常日志定时执行上报
+			参数：task 异常信息上报任务
 		*/
-		void ProcessLogDataReport(Task task);
+		void ProcessErrorLogReport(ReportErrorTask& task);
 
 		/*
-		上传日志信息
+			性能信息定时执行上报
+			参数：task 性能信息上报任务
 		*/
-		int UploadLogMessage();
+		void ProcessPerformanceReport(ReportPerformanceTask& task);
+
+		/*
+		上传错误日志信息
+		*/
+		int UploadErrorLogData();
+
+		/*
+		上传性能信息
+		*/
+		int UploadPerformanceData();
+
+		//停止运行
+		void Stop();
 
 	private:
 		bool m_bInited;
 		//读取或修改配置及日志时锁定
 		std::recursive_mutex m_reportMutex;
 		//后台处理日志线程
-		std::thread* m_pThread;
+		std::thread* m_pThreadErrorLog;
+		std::thread* m_pThreadPerformance;
 		//线程退出
 		volatile bool m_bThreadExit;
 		//收集日志数组
 		std::vector<Json::Value> m_veclogMsgs;
+		//收集URL对应的请求次数
+		std::map<std::string, int> m_mapUrls;
 	};
 
 

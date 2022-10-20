@@ -17,7 +17,8 @@ namespace APMTestDemo
         //日志打印回调（SDK调用过程中不能被释放，不然无法接受日志回调）
         static APMDllImport.APMLogFunc logFunc;
 
-        static APMDllImport.PostErrorLogFunc postLogFunc;
+        static APMDllImport.PostErrorLogFunc postErrorLogFunc;
+        static APMDllImport.PostPerformanceFunc postPerformanceFunc;
 
         public void Go()
         {
@@ -27,8 +28,9 @@ namespace APMTestDemo
             //Console.WriteLine("InitLogger.");
 
             //0.初始化SDK
-            postLogFunc = OnPostLogNotify;
-            int init = APMDllImport.APMInit(postLogFunc, logFunc);
+            postErrorLogFunc = OnPostErrorLogNotify;
+            postPerformanceFunc = OnPostPerformanceNotify;
+            int init = APMDllImport.APMInit(postErrorLogFunc, postPerformanceFunc, logFunc);
 
             //1.获取SDK版本
             IntPtr ptr = APMDllImport.GetSDKVersion();
@@ -58,9 +60,9 @@ namespace APMTestDemo
             int length = 1024;
             IntPtr intPtr = Marshal.AllocHGlobal(length);
             int result = APMDllImport.SetClientInfo(json, intPtr, ref length);
+            Console.WriteLine("SetClientInfo: " + result);
             string text = Marshal.PtrToStringAnsi(intPtr, length);
             Marshal.FreeHGlobal(intPtr);
-            Console.WriteLine("SetClientInfo: " + text);
 
             //4.性能信息压缩加密
             int len = 10240;
@@ -74,13 +76,25 @@ namespace APMTestDemo
             int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
             Console.WriteLine("SetUserInfo: " + userInfo);
 
-            //异常日志接收 
-            //string errorMsg = "测试异常数据日志上报文本demo";
-            string errorMsg = "testsssaatratass";
-            char[] charArray = Encoding.UTF8.GetChars(Encoding.UTF8.GetBytes(errorMsg));
-            //APMDllImport.AddErrorLog("APMTestDemo", errorMsg);
-            int addLog = APMDllImport.AddTraceLog(baseInfo.app_id, "ClassDemo", "Go()", "-1", 0, false, charArray, new int[] { charArray.Length }, 1);
+            //异常日志上报
+            string errorMsg = "1.0测试异常数据日志上报文本demo";
+            //var bytes = Encoding.UTF8.GetBytes(errorMsg);
+            //char[] charArray = Encoding.UTF8.GetChars(bytes);
+            int addLog = APMDllImport.AddTraceLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", 0, false, errorMsg);
             Console.WriteLine("AddTraceLog: " + addLog);
+
+            string errorMsg2 = "2.0测试异常数据日志上报文本demo";
+            int addErrorLog = APMDllImport.AddErrorLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", errorMsg2);
+            Console.WriteLine("AddErrorLog: " + addErrorLog);
+
+
+            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "Page Not Fund", 500, "模拟交易用户参与的大赛列表接口请求失败");
+            for (int i = 0; i < 5; i++)
+            {
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表");
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口");
+            }
+            Console.WriteLine("AddHTTPLog: " + httpLog);
         }
 
         /// <summary>
@@ -93,12 +107,13 @@ namespace APMTestDemo
             Console.WriteLine($"level:[{level}] message:{message}");
         }
 
-        public static async void OnPostLogNotify(string message, int length, string url)
+        public static async void OnPostErrorLogNotify(string message, int msgLength, string url, int urlLength)
         {
-            Console.WriteLine($"message:{message}");
+            Console.WriteLine($"ErrorMsg:{message}");
             try
             {
-                using (HttpContent content = new StringContent(message))
+                var value = Encoding.UTF8.GetBytes(message);
+                using (HttpContent content = new ByteArrayContent(value))
                 {
                     //测试地址
                     HttpClient httpClient = new HttpClient();
@@ -118,6 +133,33 @@ namespace APMTestDemo
                 Console.WriteLine($"异常信息上报异常：{ex.ToString()}");
             }
         }
+
+        public static async void OnPostPerformanceNotify(string message, int msgLength, string url, int urlLength)
+        {
+            Console.WriteLine($"PerformanceMsg:{message}");
+            try
+            {
+                var value = Encoding.UTF8.GetBytes(message);
+                using (HttpContent content = new ByteArrayContent(value))
+                {
+                    //测试地址
+                    HttpClient httpClient = new HttpClient();
+                    var result = await httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/perf_metric", content);
+                    if (result.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("性能信息上报成功！");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"性能信息上报失败：{result.StatusCode} {result.Content}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"异常信息上报异常：{ex.ToString()}");
+            }
+        }
     }
 
     /// <summary>
@@ -125,7 +167,7 @@ namespace APMTestDemo
     /// </summary>
     class BaseInfo
     {
-        public string app_id { get; set; } = "TestApp";
+        public string app_id { get; set; } = "hevo-client-future";
 
         public string d_uuid { get; set; } = "xxxxx-00000000";
 

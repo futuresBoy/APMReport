@@ -4,13 +4,17 @@
 #include "APMReportManager.h"
 #include "Util.h"
 #include "ClientBasicInfo.h"
+#include <codecvt>
 
 namespace APMReport
 {
 	static TaskManager g_manager;
 
 	//上报异常信息任务
-	ReportErrorTask g_reportTask;
+	ReportErrorTask g_reportErrorTask;
+
+	//上传性能信息任务
+	ReportPerformanceTask g_reportPerfTask;
 
 	TaskManager& APMReport::TaskManager::GetInstance()
 	{
@@ -19,39 +23,42 @@ namespace APMReport
 
 	TaskManager::TaskManager()
 	{
-		m_funcPostErrorInfo = nullptr;
-		m_pThread = nullptr;
 		m_bInited = false;
 	}
 
 	APMReport::TaskManager::~TaskManager()
 	{
-		if (m_pThread)
+		if (m_pThreadErrorLog)
 		{
 			m_bInited = false;
 			m_bThreadExit = true;
-			m_pThread->join();
-			delete m_pThread;
-			m_pThread = nullptr;
+			m_pThreadErrorLog->join();
+			delete m_pThreadErrorLog;
+			m_pThreadErrorLog = nullptr;
+			m_pThreadPerformance->join();
+			delete m_pThreadPerformance;
+			m_pThreadPerformance = nullptr;
 		}
 	}
 
 
-	int APMReport::TaskManager::APMInit(PostErrorLogFunc funcPostErrorInfo)
+	int APMReport::TaskManager::APMInit(PostErrorLogFunc funcPostErrorInfo, PostPerformanceFunc funcPostPerformanceInfo)
 	{
-		if (nullptr == funcPostErrorInfo)
+		if (nullptr == funcPostErrorInfo || nullptr == funcPostPerformanceInfo)
 		{
 			return ERROR_CODE_PARAMS;
 		}
 		m_funcPostErrorInfo = funcPostErrorInfo;
-		if (m_bInited || m_pThread != nullptr)
+		m_funcPostPerformance = funcPostPerformanceInfo;
+		if (m_bInited)
 		{
 			LOGWARN("Inited Aready!");
 			return 0;
 		}
 		m_bInited = true;
 		m_bThreadExit = false;
-		m_pThread = new std::thread([this] { this->TaskManager::ProcessLogDataReport(g_reportTask); });
+		m_pThreadErrorLog = new std::thread([this] { this->TaskManager::ProcessErrorLogReport(g_reportErrorTask); });
+		m_pThreadPerformance = new std::thread([this] { this->TaskManager::ProcessPerformanceReport(g_reportPerfTask); });
 		LOGINFO("Init finished!");
 		return 0;
 	}
@@ -97,11 +104,15 @@ namespace APMReport
 				return result;
 			}
 			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-			if (g_reportTask.LoadSwitch(data))
+			if (!g_reportErrorTask.LoadSwitch(data))
 			{
-				return 0;
+				return ERROR_CODE_DATA;
 			}
-			return ERROR_CODE_DATA;
+			if (!g_reportPerfTask.LoadSwitch(data))
+			{
+				return ERROR_CODE_DATA;
+			}
+			return 0;
 		}
 		catch (const std::exception&)
 		{
@@ -143,7 +154,24 @@ namespace APMReport
 		std::string appID = root["app_id"].asCString();
 		//总开关（0：关 1：开）
 		int allSwitch = root["switch"].asInt();
-		return allSwitch != 0;
+		if (allSwitch == 0)
+		{
+			this->m_bCollectSwitch = false;
+			this->m_bReportSwitch = false;
+			return true;
+		}
+		int gatherSwitch = root["gather_switch"].asInt();
+		if (gatherSwitch == 0)
+		{
+			this->m_bCollectSwitch = false;
+		}
+		//上报开关
+		int upSwitch = root["up_switch"].asInt();
+		if (upSwitch == 0)
+		{
+			this->m_bReportSwitch = false;
+		}
+		return true;
 	}
 
 	bool ReportErrorTask::LoadThresholdConfig(const Json::Value& root)
@@ -151,61 +179,22 @@ namespace APMReport
 		return true;
 	}
 
-	bool ReportErrorTask::LoadSwitch(const Json::Value& root)
+
+	bool ReportPerformanceTask::LoadThresholdConfig(const Json::Value& root)
 	{
-		bool allSwitch = Task::LoadSwitch(root);
-		//接口总开关关闭
-		if (!allSwitch)
-		{
-			g_reportTask.m_bCollectSwitch = false;
-			g_reportTask.m_bReportSwitch = false;
-		}
-		int gatherSwitch = root["gather_switch"].asInt();
-		if (gatherSwitch == 0)
-		{
-			g_reportTask.m_bCollectSwitch = false;
-		}
-		//上报开关
-		int upSwitch = root["up_switch"].asInt();
-		if (upSwitch == 0)
-		{
-			g_reportTask.m_bReportSwitch = false;
-		}
-		return true;
+		return false;
 	}
 
-
-	int TaskManager::AddErrorLog(const char* logMessage)
-	{
-		std::string strMessage(logMessage);
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-		//容错处理：1.预防上层客户端短时间内重复发送错误日志
-		for (auto i : m_veclogMsgs)
-		{
-			//过滤重复日志
-			if (i == strMessage)
-			{
-				return ERROR_CODE_LOGREPEATED;
-			}
-		}
-		m_veclogMsgs.push_back(strMessage);
-		return 0;
-	}
-
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const char* ayMsgs, int* arrayStringLength, int arrayCount)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const wchar_t* msg)
 	{
 		try
 		{
-			//转换传入的日志数组为字符串列表
-			std::string strMsgs(ayMsgs);
-			std::vector<std::string> vecMsg;
-			int j = 0;
-			for (int i = 0; i < arrayCount; i++)
-			{
-				vecMsg.push_back(strMsgs.substr(j, arrayStringLength[i]));
-				j += arrayStringLength[i];
-			}
-			return AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, vecMsg);
+			//考虑针对不同地域语言，统一转UTF-8编码
+			std::wstring wstrMsg(msg);
+			std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
+			std::string strMsg = converter2.to_bytes(wstrMsg);
+
+			return AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, strMsg);
 		}
 		catch (const std::exception & e)
 		{
@@ -215,23 +204,33 @@ namespace APMReport
 	}
 
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		//（后台）采集开关关闭
-		if (!g_reportTask.m_bCollectSwitch)
+		if (!g_reportErrorTask.m_bCollectSwitch)
 		{
 			return ERROR_CODE_SWITCHOFF;
 		}
 
+		//容错处理：1.预防上层客户端短时间内重复发送错误日志
+		for (auto i : m_veclogMsgs)
+		{
+			//过滤重复日志
+			if (i == msg)
+			{
+				return ERROR_CODE_LOGREPEATED;
+			}
+		}
+
 		//超过最大缓存上报
-		if (m_veclogMsgs.size() > g_reportTask.m_config.m_nCacheMaxSize)
+		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nCacheMaxSize)
 		{
 			//触发立即上报
-			UploadLogMessage();
+			UploadErrorLogData();
 			return ERROR_CODE_OUTOFCACHE;
 		}
-		Json::Value data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msgs);
+		Json::Value data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msg);
 		if (data.empty())
 		{
 			return ERROR_CODE_DATA;
@@ -239,22 +238,69 @@ namespace APMReport
 		m_veclogMsgs.push_back(data);
 
 		//到达阈值条数上报
-		if (m_veclogMsgs.size() > g_reportTask.m_config.m_nSendCache)
+		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nSendCache)
 		{
-			UploadLogMessage();
+			UploadErrorLogData();
 		}
 		return 0;
 	}
 
+	int TaskManager::AddHTTPLog(const std::string& traceID, const std::string& moduleName, const std::string& url, const std::string& errorCode, int costTime, const wchar_t* msg)
+	{
+		try
+		{
+			std::wstring wstrMsg(msg);
+			std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
+			std::string strMsg = converter2.to_bytes(wstrMsg);
 
-	Json::Value TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::vector<std::string>& msgs)
+			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+
+			//裁剪后的URL，用于后端计数
+			std::string extractUrl = Util::ExtractURL(url);
+			auto iter = m_mapUrls.find(extractUrl);
+			if (iter == m_mapUrls.end())
+			{
+				m_mapUrls.insert_or_assign(extractUrl, 1);
+			}
+			else
+			{
+				m_mapUrls[extractUrl] = iter->second + 1;
+			}
+
+			//构建HTTP错误日志
+			if (!errorCode.empty() && errorCode != "0")
+			{
+				Json::Value span;
+				span["logtime"] = Util::GetTimeNowStr();
+				span["module"] = ConvertModuleText(DATA_MODULE_HTTP);
+				span["trace_id"] = traceID;
+				auto userInfo = User::GetUserInfo();
+				span["userId"] = userInfo.m_sUserID;
+				span["httpURL"] = url;
+
+				span["url"] = extractUrl;
+				span["code"] = errorCode;
+				span["business"] = moduleName;
+				span["msg"] = msg;
+
+				m_veclogMsgs.push_back(span);
+			}
+			return 0;
+		}
+		catch (const std::exception & e)
+		{
+			LOGFATAL(e.what());
+			return ERROR_CODE_INNEREXCEPTION;
+		}
+	}
+
+
+	Json::Value TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
 	{
 		Json::Value span;
 		span["logtime"] = Util::GetTimeNowStr();
 		span["module"] = ConvertModuleText(moduleType);
 		span["trace_id"] = traceID;
-		//客户端为发起方，spanid为0
-		span["span_id"] = "0";
 		auto userInfo = User::GetUserInfo();
 		//账户登录前的异常上报，此时允许userID为空
 		if (userInfo.m_sUserID.empty())
@@ -267,16 +313,13 @@ namespace APMReport
 		span["code"] = errorCode;
 		span["business"] = moduleName;
 		span["subname"] = subName;
-		for (int i = 0; i < msgs.size(); i++)
-		{
-			span["msg"].append(msgs[i]);
-		}
+		span["msg"] = msg;
 		return span;
 	}
 
-	void TaskManager::ProcessLogDataReport(Task task)
+	void TaskManager::ProcessErrorLogReport(ReportErrorTask& task)
 	{
-		LOGINFO("Thread in.");
+		LOGINFO("ReportError Thread in.");
 		//上传间隔（s）
 		int interval = 0;
 		while (!m_bThreadExit)
@@ -291,22 +334,53 @@ namespace APMReport
 			}
 			if (task.m_config.m_bSendImmediately)
 			{
-				UploadLogMessage();
+				UploadErrorLogData();
 				interval = 0;
 			}
 			if (interval >= task.m_config.m_nSendMaxInterval)
 			{
-				UploadLogMessage();
+				UploadErrorLogData();
 				interval = 0;
 			}
 
 			interval += sleepInterval;
 		}
-		UploadLogMessage();
+		UploadErrorLogData();
 	}
 
 
-	int TaskManager::UploadLogMessage()
+	void TaskManager::ProcessPerformanceReport(ReportPerformanceTask& task)
+	{
+		LOGINFO("ReportPerformance Thread in.");
+		//上传间隔（s）
+		int interval = 0;
+		while (!m_bThreadExit)
+		{
+			//最小发送间隔 可作为轮询间隔时间
+			int sleepInterval = task.m_config.m_nSendMinInterval;
+			std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+
+			if (!task.m_bReportSwitch)
+			{
+				continue;
+			}
+			if (task.m_config.m_bSendImmediately)
+			{
+				UploadPerformanceData();
+				interval = 0;
+			}
+			if (interval >= task.m_config.m_nSendMaxInterval)
+			{
+				UploadPerformanceData();
+				interval = 0;
+			}
+
+			interval += sleepInterval;
+		}
+		UploadPerformanceData();
+	}
+
+	int TaskManager::UploadErrorLogData()
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		if (m_veclogMsgs.size() == 0)
@@ -314,23 +388,11 @@ namespace APMReport
 			return 0;
 		}
 		Json::Value root;
-		auto baseInfo = Client::GetBaseInfoMap();
-		auto iter = baseInfo.begin();
-		if (iter == baseInfo.end())
+		int result = CreateRequestJson(root);
+		if (result != 0)
 		{
-			LOGERROR("appID can not find, please set clientInfo first.");
-			return ERROR_CODE_NULLCLIENTINFO;
+			return result;
 		}
-		root["app_id"] = iter->first;
-		root["d_uuid"] = Client::GetDeviceUUID();
-		std::string keyID, pubKey;
-		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
-		{
-			return ERROR_CODE_DATA_NULLKEY;
-		}
-		root["key_id"] = keyID;
-		root["a_key"] = APMCryptogram::g_cipherAESKey;
-		root["base_md5"] = iter->second;
 		for (auto msg : m_veclogMsgs)
 		{
 			root["msgs"].append(msg);
@@ -353,9 +415,95 @@ namespace APMReport
 		std::string output = jsonWriter.write(root);
 		if (nullptr != m_funcPostErrorInfo)
 		{
-			m_funcPostErrorInfo(output.c_str(), output.length(), "");
+			m_funcPostErrorInfo(output.c_str(), output.length(), "", 0);
 		}
 		return 0;
+	}
+
+	int TaskManager::UploadPerformanceData()
+	{
+		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+		if (m_mapUrls.size() == 0)
+		{
+			return 0;
+		}
+		Json::Value root;
+		int result = CreateRequestJson(root);
+		if (result != 0)
+		{
+			return result;
+		}
+
+		int totalCount = 0;
+		for (auto msg : m_mapUrls)
+		{
+			totalCount += msg.second;
+			Json::Value jurl;
+			jurl["name"] = "apm_client_http_request_url_count";
+			jurl["type"] = 0;
+			jurl["count"] = msg.second;
+			jurl["sum"] = msg.second;
+			Json::Value jItem;
+			jItem["url"] = msg.first;
+			jurl["label"] = jItem;
+			root["metrics"].append(jurl);
+		}
+		m_mapUrls.clear();
+		Json::Value jTotal;
+		jTotal["name"] = "apm_client_http_request_count";
+		jTotal["type"] = 0;
+		jTotal["count"] = totalCount;
+		jTotal["sum"] = totalCount;
+		Json::Value lable;
+		jTotal["label"] = lable;
+		root["metrics"].append(jTotal);
+
+		auto jsonWriter = Json::FastWriter();
+		jsonWriter.omitEndingLineFeed();
+
+		//对日志数组进行压缩加密处理
+		auto josnMsg = jsonWriter.write(root["metrics"]);
+		std::string zipData = APMCryptogram::GzipCompress(josnMsg);
+		std::string aesMsg;
+		if (APMCryptogram::AesEncrypt(zipData, aesMsg) != 0)
+		{
+			return ERROR_CODE_DATA_ENCRYPT;
+		}
+		root["metrics"] = aesMsg;
+
+		std::string output = jsonWriter.write(root);
+		if (nullptr != m_funcPostPerformance)
+		{
+			m_funcPostPerformance(output.c_str(), output.length(), "", 0);
+		}
+		return 0;
+	}
+
+	int TaskManager::CreateRequestJson(Json::Value& root)
+	{
+		auto baseInfo = Client::GetBaseInfoMap();
+		auto iter = baseInfo.begin();
+		if (iter == baseInfo.end())
+		{
+			LOGERROR("appID can not find, please set clientInfo first.");
+			return ERROR_CODE_NULLCLIENTINFO;
+		}
+		root["app_id"] = iter->first;
+		root["d_uuid"] = Client::GetDeviceUUID();
+		std::string keyID, pubKey;
+		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
+		{
+			return ERROR_CODE_DATA_NULLKEY;
+		}
+		root["key_id"] = keyID;
+		root["a_key"] = APMCryptogram::g_cipherAESKey;
+		root["base_md5"] = iter->second;
+		return 0;
+	}
+
+	void TaskManager::Stop()
+	{
+		m_bThreadExit = true;
 	}
 
 	std::string TaskManager::ConvertModuleText(int moduleType)
@@ -380,4 +528,5 @@ namespace APMReport
 		}
 		return "pc";
 	}
+	
 }

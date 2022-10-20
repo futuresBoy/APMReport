@@ -24,17 +24,29 @@ extern "C"
 
 	/*
 	*	函数名：PostErrorLogFunc
-	*	功能：通知上传异常信息
+	*	功能：通知上传异常日志信息
 	*	参数：msg 异常信息字符串
 	*	参数：length 异常信息字符长度
 	*	参数：url 上传的Url地址
+	*	参数：url Url地址长度
 	*/
 
-	typedef int32_t(*PostErrorLogFunc)(const char* msg, int32_t length, const char* url);
+	typedef int32_t(*PostErrorLogFunc)(const char* msg, int32_t msgLength, const char* url, int32_t urlLength);
+
+	/*
+	*	函数名：PostPerformanceFunc
+	*	功能：通知上传性能信息
+	*	参数：msg 性能信息字符串
+	*	参数：length 性能信息字符长度
+	*	参数：url 上传的Url地址
+	*	参数：url Url地址长度
+	*/
+
+	typedef int32_t(*PostPerformanceFunc)(const char* msg, int32_t msgLength, const char* url, int32_t urlLength);
 
 	/*
 	*	函数名：LogFunc
-	*	功能：日志打印通知，告知SDK内部产生的日志信息，外部进行日志输出的实现
+	*	功能：日志打印通知，为SDK内部产生的日志信息，外部进行日志输出的实现
 	*	参数：logInfo 上报模块内部日志信息
 	*	参数：logLevel 日志信息级别
 	*/
@@ -48,12 +60,12 @@ extern "C"
 	APM_REPORT_API int32_t InitLogger(LogFunc funcLog);
 
 	/*
-		功能：SDK初始化
+		功能：SDK初始化（包含初始化日志InitLogger）
 		参数：funcPostErrorLog 通知上传错误信息
 		参数：funcLog 内部日志输出通知
 		返回值：0 成功，-1 异常
 	*/
-	APM_REPORT_API int32_t APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog);
+	APM_REPORT_API int32_t APMInit(PostErrorLogFunc funcPostErrorLog, PostPerformanceFunc funcPostPerformance, LogFunc funcLog);
 
 	/*
 		功能：获取SDK版本号
@@ -118,10 +130,27 @@ extern "C"
 	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName, const char* userAccount);
 
 	/*
-		功能：记录（客户端）异常日志
+		功能：记录错误日志
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
+		参数：moduleName 模块名称（客户端自己定义）
+		参数：subName 二级模块名称（可为空）
+		参数：errorCode 错误代码（客户端定义）
+		参数：msg 日志消息
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddErrorLog(const char* appID, const char* msg);
+	APM_REPORT_API int32_t AddErrorLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, const wchar_t* msg);
+
+	/*
+		功能：记录HTTP日志
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
+		参数：moduleName 模块名称（可为空，客户端自己定义）
+		参数：url 请求的URL地址
+		参数：errorCode 错误代码（0或空表示成功）
+		参数：costTime 请求HTTP耗时（单位：毫秒）
+		参数：msg 日志消息（可为空）
+		返回值：0 成功，-1 参数异常，-3 内部异常
+	*/
+	APM_REPORT_API int32_t AddHTTPLog(const char* appID, const char* moduleName, const char* url, const char* errorCode, int32_t costTime, const wchar_t* msg);
 
 	/*
 		功能：获取链路追踪ID,用于客户端提供TradeID给其他业务方
@@ -151,9 +180,7 @@ extern "C"
 		参数：errorCode 错误代码（可客户端自定义）
 		参数：moduleType 监控模块类别（参考APMBasic.h中的模块定义）
 		参数：isSucceed 是否成功
-		参数：ayMsgs 日志消息数组（可添加多条日志消息）
-		参数：arrayStringLength 每条日志消息对应的长度数组
-		参数：arrayCount 日志消息数组个数
+		参数：msg 日志消息
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t AddTraceLog(const char* appID,
@@ -162,9 +189,7 @@ extern "C"
 		const char* errorCode,
 		int32_t moduleType,
 		bool isSucceed,
-		const char* ayMsgs,
-		int32_t* arrayStringLength,
-		int32_t arrayCount);
+		const wchar_t* msg);
 
 	/*
 		功能：上传成功日志
@@ -174,9 +199,7 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：ayMsgs 日志消息数组（可添加多条日志消息）
-		参数：arrayStringLength 每条日志消息对应的长度数组
-		参数：arrayCount 日志消息数组个数
+		参数：msg 日志消息
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t TradeLogOK(const char* appID,
@@ -185,9 +208,7 @@ extern "C"
 		const char* subName,
 		const char* errorCode,
 		int32_t moduleType,
-		const char* ayMsgs,
-		int32_t* arrayStringLength,
-		int32_t arrayCount);
+		const wchar_t* msg);
 
 	/*
 		功能：上传失败日志
@@ -197,9 +218,7 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：ayMsgs 日志消息数组（可添加多条日志消息）
-		参数：arrayStringLength 每条日志消息对应的长度数组
-		参数：arrayCount 日志消息数组个数
+		参数：msg 日志消息
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t TradeLogErr(const char* appID,
@@ -208,9 +227,7 @@ extern "C"
 		const char* subName,
 		const char* errorCode,
 		int32_t moduleType,
-		const char* ayMsgs,
-		int32_t* arrayStringLength,
-		int32_t arrayCount);
+		const wchar_t* msg);
 
 	/*
 		功能：上传超时日志
@@ -220,9 +237,7 @@ extern "C"
 		参数：subName 二级模块名称（可为空）
 		参数：errorCode 错误代码
 		参数：moduleType 监控模块类别
-		参数：ayMsgs 日志消息数组（可添加多条日志消息）
-		参数：arrayStringLength 每条日志消息对应的长度数组
-		参数：arrayCount 日志消息数组个数
+		参数：msg 日志消息
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t TradeLogTimeOut(const char* appID,
@@ -231,9 +246,7 @@ extern "C"
 		const char* subName,
 		const char* errorCode,
 		int32_t moduleType,
-		const char* ayMsgs,
-		int32_t* arrayStringLength,
-		int32_t arrayCount);
+		const wchar_t* msg);
 
 #pragma endregion
 

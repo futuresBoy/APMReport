@@ -16,10 +16,10 @@ APM_REPORT_API int InitLogger(LogFunc funcLog)
 	return 0;
 }
 
-APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, LogFunc funcLog)
+APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, PostPerformanceFunc funcPostPerformance, LogFunc funcLog)
 {
 	InitLog(funcLog);
-	return TaskManager::GetInstance().APMInit(funcPostErrorLog);
+	return TaskManager::GetInstance().APMInit(funcPostErrorLog, funcPostPerformance);
 }
 
 APM_REPORT_API const char* GetSDKVersion()
@@ -207,9 +207,24 @@ APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const c
 }
 
 
-APM_REPORT_API int AddErrorLog(const char* appID, const char* json)
+APM_REPORT_API int AddErrorLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, const wchar_t* msg)
 {
-	return TaskManager::GetInstance().AddErrorLog(json);
+	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	auto traceID = Util::GetRandomUUID();
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "ERROR", errorCode, DATA_MODULE_UNKNOW, msg);
+}
+
+APM_REPORT_API int AddHTTPLog(const char* appID, const char* moduleName, const char* url, const char* errorCode, int costTime, const wchar_t* msg)
+{
+	if (appID == nullptr || url == nullptr || errorCode == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	auto traceID = Util::GetRandomUUID();
+	return TaskManager::GetInstance().AddHTTPLog(traceID, moduleName, url, errorCode, costTime, msg);
 }
 
 APM_REPORT_API int GetTraceID(char* outBuffer, int32_t& length)
@@ -270,40 +285,40 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 }
 
 
-APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, bool isSucceed, const char* ayMsgs, int32_t* arrayStringLength, int32_t arrayCount)
+APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, bool isSucceed, const wchar_t* msg)
 {
-	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || ayMsgs == nullptr || arrayStringLength == nullptr)
+	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
 	auto traceID = Util::GetRandomUUID();
 	auto result = isSucceed ? "Y" : "N";	//Yes or No
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, ayMsgs, arrayStringLength, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, msg);
 }
 
-APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* ayMsgs, int32_t* arrayStringLength, int32_t arrayCount)
+APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
 {
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || ayMsgs == nullptr || arrayStringLength == nullptr)
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, moduleType, ayMsgs, arrayStringLength, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, moduleType, msg);
 }
 
-APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* ayMsgs, int32_t* arrayStringLength, int32_t arrayCount)
+APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
 {
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || ayMsgs == nullptr || arrayStringLength == nullptr)
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, moduleType, ayMsgs, arrayStringLength, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, moduleType, msg);
 }
 
-APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const char* ayMsgs, int32_t* arrayStringLength, int32_t arrayCount)
+APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
 {
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || ayMsgs == nullptr || arrayStringLength == nullptr)
+	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, moduleType, ayMsgs, arrayStringLength, arrayCount);
+	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, moduleType, msg);
 }
