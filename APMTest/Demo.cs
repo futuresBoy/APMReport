@@ -20,7 +20,9 @@ namespace APMTestDemo
         static APMDllImport.PostErrorLogFunc postErrorLogFunc;
         static APMDllImport.PostPerformanceFunc postPerformanceFunc;
 
-        public void Go()
+        static HttpClient _httpClient = new HttpClient();
+
+        public async void Go()
         {
             //0.初始化日志
             logFunc = OnLogNotify;
@@ -37,25 +39,27 @@ namespace APMTestDemo
             var versionStr = Marshal.PtrToStringAnsi(ptr);
             Console.WriteLine("SDK Version: " + versionStr);
 
-            ////2.1 设置RSA密钥
-            //int testNull = APMDllImport.SetRSAPubKey(null, null);
+            var baseInfo = new BaseInfo();
+
+            //2.1 设置RSA密钥
             //int rasResult = APMDllImport.SetRSAPubKey("6758ae5bcabf52bf1016a6803b846db5", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB");
-            //Console.WriteLine("SetRSAPubKey: " + rasResult);
 
             //2.2 设置阈值（包括RSA密钥）
-            //测试地址 https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_threshold_config?app_id=mobile-archive-ios&a_ver_app=1.0.0.1&s_ver=1.0.0&d_uuid=asdfadsgfasdgasgasdga
+            //测试地址
+            string configUrl = $"https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_threshold_config?app_id={baseInfo.app_id}&a_ver_app={baseInfo.a_ver_app}&s_ver={versionStr}&d_uuid={baseInfo.d_uuid}";
             string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"1b891e80c0b4cd56a08e2d394a8e31c8\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQD04nj3/4ynPzu28kRh7q83SReo34wKwgaffUm/PfjemtYdcB0LvOwQl74tC2i8pDhvSHMf5mx0USSbr9hQLHp30ubn18oVVyVK2dFsmj1pJylGw2Yw6TnFR/qUfJTA7YteFPVh2ADNc+G9tsA/7SbRiTB3P72zkTB1rnrT+hdILQIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"500\\\",\\\"type\\\":\\\"2\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"slow_load_threshold\\\":\\\"1\\\"}\"},{\"module\":\"base\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\"}\"},{\"module\":\"web\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"type\\\":\\\"3\\\",\\\"white_screen_threshold\\\":\\\"95\\\",\\\"slow_load_threshold\\\":\\\"3\\\"}\"}]}}";
             int configResult = APMDllImport.SetReportConfig(ss);
             Console.WriteLine("SetReportConfig: " + configResult);
 
             //2.3 设置开关
-            //测试地址：https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_switch_config?app_id=mobile-archive-ios&a_ver_app=1.0.0.1&s_ver=1.0.0&d_uuid=asdfadsgfasdgasgasdga
+            //测试地址：
+            string switchUrl = $"https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_switch_config?app_id={baseInfo.app_id}&a_ver_app={baseInfo.a_ver_app}&s_ver={versionStr}&d_uuid={baseInfo.d_uuid}";
             string switchMsg = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"app_id\":\"all\",\"a_ver_app\":\"all\",\"s_ver\":\"all\",\"d_uuid\":\"all\",\"switch\":1,\"gather_switch\":127,\"up_switch\":127}}";
             int switchResult = APMDllImport.SetReportSwitch(switchMsg);
             Console.WriteLine("SetReportSwitch: " + switchResult);
 
             //3.设置基础数据
-            var baseInfo = new BaseInfo();
+            
             var json = JsonConvert.SerializeObject(baseInfo);
             int length = 1024;
             IntPtr intPtr = Marshal.AllocHGlobal(length);
@@ -63,6 +67,11 @@ namespace APMTestDemo
             Console.WriteLine("SetClientInfo: " + result);
             string text = Marshal.PtrToStringAnsi(intPtr, length);
             Marshal.FreeHGlobal(intPtr);
+            using (HttpContent content = new StringContent(text))
+            {
+                var httpSetBaseInfo = await _httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/base_info", content);
+                Console.WriteLine("基础信息完成上报：" + httpSetBaseInfo.IsSuccessStatusCode);
+            }
 
             //4.性能信息压缩加密
             int len = 10240;
@@ -87,8 +96,8 @@ namespace APMTestDemo
             int addErrorLog = APMDllImport.AddErrorLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", errorMsg2);
             Console.WriteLine("AddErrorLog: " + addErrorLog);
 
-
-            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "Page Not Fund", 500, "模拟交易用户参与的大赛列表接口请求失败");
+            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "404", 500, "Page Not Fund");
+             httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/default/appconfig/getall/?app_key=qhtpc", "", 5000, "");
             for (int i = 0; i < 5; i++)
             {
                 httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表");
@@ -116,8 +125,7 @@ namespace APMTestDemo
                 using (HttpContent content = new ByteArrayContent(value))
                 {
                     //测试地址
-                    HttpClient httpClient = new HttpClient();
-                    var result = await httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log", content);
+                    var result = await _httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/error_log", content);
                     if (result.IsSuccessStatusCode)
                     {
                         Console.WriteLine("异常信息上报成功！");
@@ -143,8 +151,7 @@ namespace APMTestDemo
                 using (HttpContent content = new ByteArrayContent(value))
                 {
                     //测试地址
-                    HttpClient httpClient = new HttpClient();
-                    var result = await httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/perf_metric", content);
+                    var result = await _httpClient.PostAsync("https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/perf_metric", content);
                     if (result.IsSuccessStatusCode)
                     {
                         Console.WriteLine("性能信息上报成功！");
@@ -169,13 +176,13 @@ namespace APMTestDemo
     {
         public string app_id { get; set; } = "hevo-client-future";
 
-        public string d_uuid { get; set; } = "xxxxx-00000000";
+        public string d_uuid { get; set; } = "FA-80-02-0A-0C-A8";
 
         public string a_bundle_id { get; set; } = "happ.exe";
 
         public string a_ver_app { get; set; } = "1.0.0";
 
-        public string d_os { get; set; } = "windows";
+        public string d_os { get; set; } = "windows 7";
 
         public string d_model { get; set; } = "";
     }

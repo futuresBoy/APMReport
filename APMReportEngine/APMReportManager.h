@@ -25,7 +25,7 @@ namespace APMReport
 		{
 			m_nCacheMaxSize = 100;
 			m_bSendImmediately = false;
-			m_nSendMinInterval = 10;
+			m_nSendMinInterval = 15;
 			m_nSendMaxInterval = 120;
 			m_nSendCache = 50;
 			m_nRetry = 0;
@@ -140,7 +140,7 @@ namespace APMReport
 		PostErrorLogFunc m_funcPostPerformance;
 	private:
 		/*构建上报后台的日志数据*/
-		Json::Value BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg);
+		int BuildLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg);
 
 		/*监控模块定义转换为对应的文本，用于构建后台索引*/
 		std::string ConvertModuleText(int moduleType);

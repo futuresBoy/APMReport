@@ -213,16 +213,6 @@ namespace APMReport
 			return ERROR_CODE_SWITCHOFF;
 		}
 
-		//容错处理：1.预防上层客户端短时间内重复发送错误日志
-		for (auto i : m_veclogMsgs)
-		{
-			//过滤重复日志
-			if (i == msg)
-			{
-				return ERROR_CODE_LOGREPEATED;
-			}
-		}
-
 		//超过最大缓存上报
 		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nCacheMaxSize)
 		{
@@ -230,12 +220,13 @@ namespace APMReport
 			UploadErrorLogData();
 			return ERROR_CODE_OUTOFCACHE;
 		}
-		Json::Value data = BuidLogData(traceID, moduleName, subName, result, errorCode, moduleType, msg);
-		if (data.empty())
+
+		int build = BuildLogData(traceID, moduleName, subName, result, errorCode, moduleType, msg);
+		if (build != 0)
 		{
-			return ERROR_CODE_DATA;
+			return build;
 		}
-		m_veclogMsgs.push_back(data);
+
 
 		//到达阈值条数上报
 		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nSendCache)
@@ -267,24 +258,38 @@ namespace APMReport
 				m_mapUrls[extractUrl] = iter->second + 1;
 			}
 
-			//构建HTTP错误日志
-			if (!errorCode.empty() && errorCode != "0")
+			if ((errorCode.empty() || errorCode == "0") && costTime < 3000)
 			{
-				Json::Value span;
-				span["logtime"] = Util::GetTimeNowStr();
-				span["module"] = ConvertModuleText(DATA_MODULE_HTTP);
-				span["trace_id"] = traceID;
-				auto userInfo = User::GetUserInfo();
-				span["userId"] = userInfo.m_sUserID;
-				span["httpURL"] = url;
-
-				span["url"] = extractUrl;
-				span["code"] = errorCode;
-				span["business"] = moduleName;
-				span["msg"] = msg;
-
-				m_veclogMsgs.push_back(span);
+				return 0;
 			}
+			//（后台）采集开关关闭
+			if (!g_reportErrorTask.m_bCollectSwitch)
+			{
+				return ERROR_CODE_SWITCHOFF;
+			}
+
+			//构建HTTP错误日志
+			Json::Value span;
+			span["logtime"] = Util::GetTimeNowStr();
+			span["module"] = ConvertModuleText(DATA_MODULE_HTTP);
+			span["trace_id"] = traceID;
+			auto userInfo = User::GetUserInfo();
+			span["userId"] = userInfo.m_sUserID;
+			span["httpURL"] = url;
+			if (costTime >= 3000)
+			{
+				span["error_type"] = "apm_http_slow_request";
+			}
+			else
+			{
+				span["error_type"] = "apm_http_error_request";
+			}
+			span["url"] = extractUrl;
+			span["errorCode"] = errorCode;
+			span["business"] = moduleName;
+			span["msg"] = msg;
+
+			m_veclogMsgs.push_back(span);
 			return 0;
 		}
 		catch (const std::exception & e)
@@ -295,8 +300,18 @@ namespace APMReport
 	}
 
 
-	Json::Value TaskManager::BuidLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
+	int TaskManager::BuildLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
 	{
+		//容错预防：上层客户端短时间内发送过量重复日志
+		for (auto i : m_veclogMsgs)
+		{
+			//过滤重复日志
+			if (i["msg"] == msg)
+			{
+				return ERROR_CODE_LOGREPEATED;
+			}
+		}
+
 		Json::Value span;
 		span["logtime"] = Util::GetTimeNowStr();
 		span["module"] = ConvertModuleText(moduleType);
@@ -306,7 +321,7 @@ namespace APMReport
 		if (userInfo.m_sUserID.empty())
 		{
 			LOGWARN("userID is empty,please invoke SetUserInfo() ");
-			return new Json::Value();
+			return ERROR_CODE_NULLUSERINFO;
 		}
 		span["userId"] = userInfo.m_sUserID;
 		span["reslut"] = result;
@@ -314,7 +329,9 @@ namespace APMReport
 		span["business"] = moduleName;
 		span["subname"] = subName;
 		span["msg"] = msg;
-		return span;
+
+		m_veclogMsgs.push_back(span);
+		return 0;
 	}
 
 	void TaskManager::ProcessErrorLogReport(ReportErrorTask& task)
@@ -385,6 +402,12 @@ namespace APMReport
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		if (m_veclogMsgs.size() == 0)
 		{
+			return 0;
+		}
+		//异常日志上报开关关了
+		if (!g_reportErrorTask.m_bReportSwitch)
+		{
+			m_veclogMsgs.clear();
 			return 0;
 		}
 		Json::Value root;
@@ -528,5 +551,5 @@ namespace APMReport
 		}
 		return "pc";
 	}
-	
+
 }

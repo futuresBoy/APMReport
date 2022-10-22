@@ -145,7 +145,7 @@ extern "C"
 		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
 		参数：moduleName 模块名称（可为空，客户端自己定义）
 		参数：url 请求的URL地址
-		参数：errorCode 错误代码（0或空表示成功）
+		参数：errorCode 错误代码（0或空表示成功，如果statusCode为400-600时传statusCode）
 		参数：costTime 请求HTTP耗时（单位：毫秒）
 		参数：msg 日志消息（可为空）
 		返回值：0 成功，-1 参数异常，-3 内部异常
