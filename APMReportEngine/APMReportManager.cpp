@@ -284,6 +284,7 @@ namespace APMReport
 			{
 				span["error_type"] = "apm_http_error_request";
 			}
+			span["totalTime"] = costTime;
 			span["url"] = extractUrl;
 			span["errorCode"] = errorCode;
 			span["business"] = moduleName;
