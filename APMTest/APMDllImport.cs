@@ -120,14 +120,21 @@ namespace APMTestDemo
         public static extern int AddTraceLog(string appID, string moduleName, string subName, string errorCode, int monitorType, bool isSucceed, [MarshalAs(UnmanagedType.LPWStr)]string msg);
 
 
+        ///// <summary>
+        ///// 添加错误日志
+        ///// </summary>
+        ///// <param name="msg"></param>
+        ///// <returns></returns>
+        //[DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        //public static extern int AddErrorLog(string appID, string moduleName, string subName, string errorCode, [MarshalAs(UnmanagedType.LPWStr)]string msg);
+
         /// <summary>
         /// 添加错误日志
         /// </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int AddErrorLog(string appID, string moduleName, string subName, string errorCode, [MarshalAs(UnmanagedType.LPWStr)]string msg);
-
+        public static extern int AddErrorLog(string appID, string module, string logType, string bussiness, string subName, string errorCode, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string data, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string extData);
 
         /// <summary>
         /// 添加HTTP日志
@@ -135,7 +142,59 @@ namespace APMTestDemo
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int AddHTTPLog(string appID, string moduleName, string url, string errorCode, int costTime, [MarshalAs(UnmanagedType.LPWStr)]string msg);
+        public static extern int AddHTTPLog(string appID, string logType, string moduleName, string url, string errorCode, int costTime, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string data, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string extData);
+    }
 
+    //接口数据为utf-8编码所设置
+    public class UTF8Marshaler : ICustomMarshaler
+    {
+        public void CleanUpManagedData(object managedObj)
+        {
+        }
+
+        public void CleanUpNativeData(IntPtr pNativeData)
+        {
+            Marshal.FreeHGlobal(pNativeData);
+        }
+
+        public int GetNativeDataSize()
+        {
+            return -1;
+        }
+
+        public IntPtr MarshalManagedToNative(object managedObj)
+        {
+            if (object.ReferenceEquals(managedObj, null))
+                return IntPtr.Zero;
+            if (!(managedObj is string))
+                throw new InvalidOperationException();
+
+            byte[] utf8bytes = Encoding.UTF8.GetBytes(managedObj as string);
+            IntPtr ptr = Marshal.AllocHGlobal(utf8bytes.Length + 1);
+            Marshal.Copy(utf8bytes, 0, ptr, utf8bytes.Length);
+            Marshal.WriteByte(ptr, utf8bytes.Length, 0);
+            return ptr;
+        }
+
+        public object MarshalNativeToManaged(IntPtr pNativeData)
+        {
+            if (pNativeData == IntPtr.Zero)
+                return null;
+
+            List<byte> bytes = new List<byte>();
+            for (int offset = 0; ; offset++)
+            {
+                byte b = Marshal.ReadByte(pNativeData, offset);
+                if (b == 0) break;
+                else bytes.Add(b);
+            }
+            return Encoding.UTF8.GetString(bytes.ToArray(), 0, bytes.Count);
+        }
+
+        private static UTF8Marshaler instance = new UTF8Marshaler();
+        public static ICustomMarshaler GetInstance(string cookie)
+        {
+            return instance;
+        }
     }
 }

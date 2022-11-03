@@ -185,26 +185,8 @@ namespace APMReport
 		return false;
 	}
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const wchar_t* msg)
-	{
-		try
-		{
-			//考虑针对不同地域语言，统一转UTF-8编码
-			std::wstring wstrMsg(msg);
-			std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
-			std::string strMsg = converter2.to_bytes(wstrMsg);
 
-			return AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, strMsg);
-		}
-		catch (const std::exception & e)
-		{
-			LOGFATAL(e.what());
-			return ERROR_CODE_INNEREXCEPTION;
-		}
-	}
-
-
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
+	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		//（后台）采集开关关闭
@@ -221,7 +203,7 @@ namespace APMReport
 			return ERROR_CODE_OUTOFCACHE;
 		}
 
-		int build = BuildLogData(traceID, moduleName, subName, result, errorCode, moduleType, msg);
+		int build = BuildLogData(traceID, module, logType, bussiness, subName, errorCode, msg, extData);
 		if (build != 0)
 		{
 			return build;
@@ -236,14 +218,10 @@ namespace APMReport
 		return 0;
 	}
 
-	int TaskManager::AddHTTPLog(const std::string& traceID, const std::string& moduleName, const std::string& url, const std::string& errorCode, int costTime, const wchar_t* msg)
+	int TaskManager::AddHTTPLog(const std::string& traceID, const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData)
 	{
 		try
 		{
-			std::wstring wstrMsg(msg);
-			std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
-			std::string strMsg = converter2.to_bytes(wstrMsg);
-
 			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 
 			//裁剪后的URL，用于后端计数
@@ -269,28 +247,38 @@ namespace APMReport
 			}
 
 			//构建HTTP错误日志
-			Json::Value span;
-			span["logtime"] = Util::GetTimeNowStr();
-			span["module"] = ConvertModuleText(DATA_MODULE_HTTP);
-			span["trace_id"] = traceID;
-			auto userInfo = User::GetUserInfo();
-			span["userId"] = userInfo.m_sUserID;
-			span["httpURL"] = url;
-			if (costTime >= 3000)
+			Json::Value root;
+			if (GenerateRoot(msg, root) != 0)
 			{
-				span["error_type"] = "apm_http_slow_request";
+				return ERROR_CODE_DATA_JSON;
+			}
+			root["logtime"] = Util::GetTimeNowStr();
+			root["module"] = ConvertModuleText(DATA_MODULE_HTTP);
+			root["trace_id"] = traceID;
+			auto userInfo = User::GetUserInfo();
+			root["userId"] = userInfo.m_sUserID;
+			root["httpURL"] = url;
+			if (logType.empty())
+			{
+				root["error_type"] = costTime >= 3000 ? "apm_http_slow_request" : "apm_http_error_request";
 			}
 			else
 			{
-				span["error_type"] = "apm_http_error_request";
+				root["error_type"] = logType;
 			}
-			span["totalTime"] = costTime;
-			span["url"] = extractUrl;
-			span["errorCode"] = errorCode;
-			span["business"] = moduleName;
-			span["msg"] = msg;
+			root["business"] = bussiness;
+			root["totalTime"] = costTime;
+			root["url"] = extractUrl;
+			root["errorCode"] = errorCode;
 
-			m_veclogMsgs.push_back(span);
+			Json::Reader readerExt;
+			Json::Value extJson;
+			if (!extData.empty() && readerExt.parse(extData, extJson))
+			{
+				root["extData"] = extJson;
+			}
+
+			m_veclogMsgs.push_back(root);
 			return 0;
 		}
 		catch (const std::exception & e)
@@ -301,22 +289,32 @@ namespace APMReport
 	}
 
 
-	int TaskManager::BuildLogData(const std::string& traceID, const std::string& moduleName, const std::string& subName, const std::string& result, const std::string& errorCode, int moduleType, const std::string& msg)
+	int TaskManager::BuildLogData(const std::string& traceID, const std::string& moduleName, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
 	{
-		//容错预防：上层客户端短时间内发送过量重复日志
-		for (auto i : m_veclogMsgs)
+		////容错预防：上层客户端短时间内发送过量重复日志
+		//for (auto i : m_veclogMsgs)
+		//{
+		//	//过滤重复日志
+		//	if (i["msg"] == msg)
+		//	{
+		//		return ERROR_CODE_LOGREPEATED;
+		//	}
+		//}
+
+		Json::Value root;
+		if (GenerateRoot(msg, root) != 0)
 		{
-			//过滤重复日志
-			if (i["msg"] == msg)
-			{
-				return ERROR_CODE_LOGREPEATED;
-			}
+			return ERROR_CODE_DATA_JSON;
 		}
 
-		Json::Value span;
-		span["logtime"] = Util::GetTimeNowStr();
-		span["module"] = ConvertModuleText(moduleType);
-		span["trace_id"] = traceID;
+		root["trace_id"] = traceID;
+		root["logtime"] = Util::GetTimeNowStr();
+		root["module"] = moduleName.empty() ? "pc" : moduleName;
+		root["error_type"] = logType.empty() ? "error" : logType;
+		root["business"] = bussiness;
+		root["subname"] = subName;
+		root["errCode"] = errorCode;
+
 		auto userInfo = User::GetUserInfo();
 		//账户登录前的异常上报，此时允许userID为空
 		if (userInfo.m_sUserID.empty())
@@ -324,14 +322,38 @@ namespace APMReport
 			LOGWARN("userID is empty,please invoke SetUserInfo() ");
 			return ERROR_CODE_NULLUSERINFO;
 		}
-		span["userId"] = userInfo.m_sUserID;
-		span["reslut"] = result;
-		span["code"] = errorCode;
-		span["business"] = moduleName;
-		span["subname"] = subName;
-		span["msg"] = msg;
+		root["userId"] = userInfo.m_sUserID;
 
-		m_veclogMsgs.push_back(span);
+		Json::Reader readerExt;
+		Json::Value extJson;
+		if (!extData.empty() && readerExt.parse(extData, extJson))
+		{
+			root["extData"] = extJson;
+		}
+
+		m_veclogMsgs.push_back(root);
+		return 0;
+	}
+
+	int TaskManager::GenerateRoot(const std::string& msg, Json::Value& root)
+	{
+		if (msg.empty())
+		{
+			return 0;
+		}
+		//区分普通字符串和Json字符串
+		if (msg[0] != '{')
+		{
+			root["msg"] = msg;
+		}
+		else
+		{
+			Json::Reader reader;
+			if (!reader.parse(msg, root))
+			{
+				return ERROR_CODE_DATA_JSON;
+			}
+		}
 		return 0;
 	}
 

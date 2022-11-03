@@ -59,7 +59,7 @@ namespace APMTestDemo
             Console.WriteLine("SetReportSwitch: " + switchResult);
 
             //3.设置基础数据
-            
+
             var json = JsonConvert.SerializeObject(baseInfo);
             int length = 1024;
             IntPtr intPtr = Marshal.AllocHGlobal(length);
@@ -85,23 +85,30 @@ namespace APMTestDemo
             int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
             Console.WriteLine("SetUserInfo: " + userInfo);
 
-            //异常日志上报
-            string errorMsg = "1.0测试异常数据日志上报文本demo";
-            //var bytes = Encoding.UTF8.GetBytes(errorMsg);
-            //char[] charArray = Encoding.UTF8.GetChars(bytes);
-            int addLog = APMDllImport.AddTraceLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", 0, false, errorMsg);
-            Console.WriteLine("AddTraceLog: " + addLog);
+            ////异常日志上报
+            //string errorMsg = "1.0测试异常数据日志上报文本demo";
+            ////var bytes = Encoding.UTF8.GetBytes(errorMsg);
+            ////char[] charArray = Encoding.UTF8.GetChars(bytes);
+            //int addLog = APMDllImport.AddTraceLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", 0, false, errorMsg);
+            //Console.WriteLine("AddTraceLog: " + addLog);
 
-            string errorMsg2 = "2.0测试异常数据日志上报文本demo";
-            int addErrorLog = APMDllImport.AddErrorLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", errorMsg2);
-            Console.WriteLine("AddErrorLog: " + addErrorLog);
+            //string errorMsg2 = "2.0测试异常数据日志上报文本demo";
+            //int addErrorLog = APMDllImport.AddErrorLog(baseInfo.app_id, "ClassDemo", "GoMethod", "-1", errorMsg2);
+            //Console.WriteLine("AddErrorLog: " + addErrorLog);
 
-            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "404", 500, "Page Not Fund");
-             httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/default/appconfig/getall/?app_key=qhtpc", "", 5000, "");
+            var msg = "3.0异常日志Demo非Json";
+            var jsonMsg = "{\"message\":\"3.0异常日志Demo是json\"}";
+            var extData = "{\"level2\": \"true\"}";
+            int addErrorLog = APMDllImport.AddErrorLog(baseInfo.app_id, "", "error", "Demo", "GoMethod", "-1", msg, extData);
+            int addErrorLog2 = APMDllImport.AddErrorLog(baseInfo.app_id, "", "error", "Demo", "GoMethod", "-1", jsonMsg, extData);
+            Console.WriteLine("AddErrorLog: " + addErrorLog2);
+
+            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "","ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "404", 500, "Page Not Fund","");
+            httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id,"", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/default/appconfig/getall/?app_key=qhtpc", "", 5000, "","");
             for (int i = 0; i < 5; i++)
             {
-                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表");
-                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口");
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "","ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表","");
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id,"", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口","");
             }
             Console.WriteLine("AddHTTPLog: " + httpLog);
         }
@@ -169,6 +176,15 @@ namespace APMTestDemo
         }
     }
 
+    static class Extension
+    {
+
+        public static char[] ToUTF8(this string data)
+        {
+            return Encoding.UTF8.GetChars(Encoding.UTF8.GetBytes(data));
+        }
+
+    }
     /// <summary>
     /// 服务端定义的设备基础信息结构
     /// </summary>

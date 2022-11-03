@@ -6,6 +6,7 @@
 #include "APMReport.h"
 #include "APMReportManager.h"
 #include "ClientBasicInfo.h"
+#include <codecvt>
 
 using namespace APMReport;
 
@@ -207,24 +208,56 @@ APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const c
 }
 
 
-APM_REPORT_API int AddErrorLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, const wchar_t* msg)
+APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char* logType, const char* bussiness, const char* subName, const char* errorCode, const char* msg, const char* extData)
 {
-	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
+	if (appID == nullptr || module == nullptr || logType == nullptr || bussiness == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
 	auto traceID = Util::GetRandomUUID();
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "ERROR", errorCode, DATA_MODULE_UNKNOW, msg);
+	try
+	{
+		//考虑针对不同地域语言，统一用UTF-8编码
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+		std::wstring wideString = converter.from_bytes(msg);
+
+		std::wstring wstrMsg(wideString);
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
+		std::string strMsg = converter2.to_bytes(wstrMsg);
+
+		return TaskManager::GetInstance().AddTraceLog(traceID, module, logType, bussiness, subName, errorCode, strMsg, extData);
+	}
+	catch (const std::exception & e)
+	{
+		LOGFATAL(e.what());
+		return ERROR_CODE_INNEREXCEPTION;
+	}
 }
 
-APM_REPORT_API int AddHTTPLog(const char* appID, const char* moduleName, const char* url, const char* errorCode, int costTime, const wchar_t* msg)
+APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char* bussiness, const char* url, const char* errorCode, int costTime, const char* msg, const char* extData)
 {
-	if (appID == nullptr || url == nullptr || errorCode == nullptr)
+	if (appID == nullptr || bussiness == nullptr || url == nullptr || errorCode == nullptr)
 	{
 		return ERROR_CODE_PARAMS;
 	}
 	auto traceID = Util::GetRandomUUID();
-	return TaskManager::GetInstance().AddHTTPLog(traceID, moduleName, url, errorCode, costTime, msg);
+	try
+	{
+		//考虑针对不同地域语言，统一用UTF-8编码
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+		std::wstring wideString = converter.from_bytes(msg);
+
+		std::wstring wstrMsg(wideString);
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
+		std::string strMsg = converter2.to_bytes(wstrMsg);
+		
+		return TaskManager::GetInstance().AddHTTPLog(traceID, logType, bussiness, url, errorCode, costTime, strMsg, extData);
+	}
+	catch (const std::exception & e)
+	{
+		LOGFATAL(e.what());
+		return ERROR_CODE_INNEREXCEPTION;
+	}
 }
 
 APM_REPORT_API int GetTraceID(char* outBuffer, int32_t& length)
@@ -282,43 +315,4 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 		LOGFATAL(e.what());
 		return ERROR_CODE_INNEREXCEPTION;
 	}
-}
-
-
-APM_REPORT_API int AddTraceLog(const char* appID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, bool isSucceed, const wchar_t* msg)
-{
-	if (moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
-	{
-		return ERROR_CODE_PARAMS;
-	}
-	auto traceID = Util::GetRandomUUID();
-	auto result = isSucceed ? "Y" : "N";	//Yes or No
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, result, errorCode, moduleType, msg);
-}
-
-APM_REPORT_API int TradeLogOK(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
-{
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
-	{
-		return ERROR_CODE_PARAMS;
-	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "Y", errorCode, moduleType, msg);
-}
-
-APM_REPORT_API int TradeLogErr(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
-{
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
-	{
-		return ERROR_CODE_PARAMS;
-	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "N", errorCode, moduleType, msg);
-}
-
-APM_REPORT_API int TradeLogTimeOut(const char* appID, const char* traceID, const char* moduleName, const char* subName, const char* errorCode, int32_t moduleType, const wchar_t* msg)
-{
-	if (traceID == nullptr || moduleName == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
-	{
-		return ERROR_CODE_PARAMS;
-	}
-	return TaskManager::GetInstance().AddTraceLog(traceID, moduleName, subName, "TIMEOUT", errorCode, moduleType, msg);
 }
