@@ -138,7 +138,7 @@ namespace APMReport
 		PostErrorLogFunc m_funcPostPerformance;
 	private:
 
-		/*生成基础的Json结构体*/
+		/*生成基础的上报Json结构体*/
 		int GenerateRoot(const std::string& msg, Json::Value& root);
 
 		/*构建上报后台的日志数据*/

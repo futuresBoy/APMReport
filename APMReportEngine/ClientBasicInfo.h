@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include "json/json.h"
 
 /*处理客户端或用户基础信息*/
 namespace APMReport
@@ -20,6 +21,9 @@ namespace APMReport
 	//各appID对应的基础信息
 	static std::map<std::string, std::string> g_mapAppBaseInfoMD5;
 
+	//扩展的用户信息
+	static Json::Value g_jsonUserInfo;
+
 	/*用户信息*/
 	class User
 	{
@@ -28,6 +32,9 @@ namespace APMReport
 		static int SetUserInfo(const char* sUserID, const char* sUserName, const char* sUserAccount);
 		/*获取用户基础信息*/
 		static UserInfo GetUserInfo();
+		/*设置扩展的用户基础信息*/
+		static int SetUserInfoEx(const char* msg);
+		static Json::Value GetUserInfoEx();
 	};
 
 	/*设备信息*/

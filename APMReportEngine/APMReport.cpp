@@ -208,6 +208,11 @@ APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const c
 }
 
 
+APM_REPORT_API int SetUserInfoEx(const char* userInfo)
+{
+	return User::SetUserInfoEx(userInfo);
+}
+
 APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char* logType, const char* bussiness, const char* subName, const char* errorCode, const char* msg, const char* extData)
 {
 	if (appID == nullptr || module == nullptr || logType == nullptr || bussiness == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)

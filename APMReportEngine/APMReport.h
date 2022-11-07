@@ -122,27 +122,43 @@ extern "C"
 
 	/*
 		功能：设置用户信息
-		参数：客户端账户信息（Json格式，参考：{"userID":"","userName":"","userAccount":"","level2":""}）
+		参数：账号userid（唯一）
+		参数：账户名称/昵称（不唯一，可为空）
+		参数：账户代码（唯一，可为空）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName, const char* userAccount);
 
 	/*
-		功能：记录错误日志
-		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
-		参数：module 上传elk索引，如web,http,tcp，默认为pc
-		参数：logType 错误分类，如apm_web_slow_request/apm_web_white_screen/apm_web_crash
-		参数：bussiness 业务模块名称，如selfStock
-		参数：subName 二级模块名称，如update
-		参数：errorCode 错误代码（客户端定义）
-		参数：msg 日志详情
-		参数：extData 扩展字段（Json格式）
+		功能：设置拓展的用户信息
+		参数：客户端用户信息（指定Json格式，参考：{"userID":"","userName":"","level2":"","tradeAccount":""}）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddErrorLog(const char* appID, const char* module, const char* logType, const char* bussiness, const char* subName, const char* errorCode, const char* msg, const char* extData);
+	APM_REPORT_API int32_t SetUserInfoEx(const char* userInfo);
 
 	/*
-		功能：记录HTTP日志
+		功能：记录异常日志
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
+		参数：module 上传elk的索引，如web,http,tcp，默认为pc
+		参数：logType 错误分类，如apm_web_slow_request/apm_web_white_screen/apm_web_crash
+		参数：bussiness 业务模块名称，如selfStock
+		参数：subName 二级模块名称，如updateTable
+		参数：errorCode 错误代码
+		参数：msg 日志详情
+		参数：extData 扩展字段（指定Json格式）
+		返回值：0 成功，-1 参数异常，-3 内部异常
+	*/
+	APM_REPORT_API int32_t AddErrorLog(const char* appID, 
+									const char* module, 
+									const char* logType, 
+									const char* bussiness, 
+									const char* subName, 
+									const char* errorCode, 
+									const char* msg, 
+									const char* extData);
+
+	/*
+		功能：记录HTTP异常日志
 		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
 		参数：logType 错误分类，如apm_http_slow_request/apm_http_error_request
 		参数：bussiness 业务模块名称
@@ -153,7 +169,14 @@ extern "C"
 		参数：extData 扩展字段（Json格式）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddHTTPLog(const char* appID, const char* logType, const char* bussiness, const char* url, const char* errorCode, int32_t costTime, const char* msg, const char* extData);
+	APM_REPORT_API int32_t AddHTTPLog(const char* appID, 
+									const char* logType, 
+									const char* bussiness, 
+									const char* url, 
+									const char* errorCode, 
+									int32_t costTime, 
+									const char* msg, 
+									const char* extData);
 
 	/*
 		功能：获取链路追踪ID,用于客户端提供TradeID给其他业务方

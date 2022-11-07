@@ -1,6 +1,7 @@
 #include "APMBasic.h"
 #include "ClientBasicInfo.h"
 #include <string>
+#include "json/json.h"
 
 
 namespace APMReport
@@ -36,6 +37,27 @@ namespace APMReport
 	UserInfo User::GetUserInfo()
 	{
 		return g_userInfo;
+	}
+
+	int User::SetUserInfoEx(const char* msg)
+	{
+		if (msg == nullptr)
+		{
+			return ERROR_CODE_PARAMS;
+		}
+		Json::Value root;
+		Json::Reader reader;
+		if (!reader.parse(msg, root))
+		{
+			return ERROR_CODE_DATA_JSON;
+		}
+		g_jsonUserInfo = root;
+		return 0;
+	}
+
+	Json::Value User::GetUserInfoEx()
+	{
+		return g_jsonUserInfo;
 	}
 
 	std::string Client::GetDeviceUUID()

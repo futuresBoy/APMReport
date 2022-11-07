@@ -85,6 +85,9 @@ namespace APMTestDemo
             int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
             Console.WriteLine("SetUserInfo: " + userInfo);
 
+            int userInfoEx = APMDllImport.SetUserInfoEx("{\"userID\":\"12345678\",\"userName\":\"xukan\",\"innerUser\":\"true\"}");
+            Console.WriteLine("SetUserInfoEx: " + userInfoEx);
+
             ////异常日志上报
             //string errorMsg = "1.0测试异常数据日志上报文本demo";
             ////var bytes = Encoding.UTF8.GetBytes(errorMsg);

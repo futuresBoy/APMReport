@@ -17,7 +17,7 @@ namespace APMTestDemo
         /// </summary>
         /// <param name="monitorPath">监控进程路径</param>
         /// <param name="productName">产品名称（公司业务树上登记的名称）</param>
-        /// <param name="productBuild">产品编译名（C#端不用填）</param>
+        /// <param name="productBuild">产品编译名（C#客户端可不填）</param>
         /// <param name="productVersion">产品版本号</param>
         /// <returns>返回值大于0为监控进程ID，小于0报错</returns>
         [DllImport(dllPerfMonName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
@@ -29,10 +29,9 @@ namespace APMTestDemo
         /// <returns></returns>
         public static bool StartPerformance()
         {
-            //string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "performance", "hxperformance.exe");
-            //int pid = APMPerfStartMonitorCS(path, "hevo-client-future", "happ", "4.2.880.0");
-            //return pid > 0;
-            return false;
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "performance", "hxperformance.exe");
+            int pid = APMPerfStartMonitorCS(path, "hevo-client-future", "happ", "4.2.880.0");
+            return pid > 0;
         }
     }
 }

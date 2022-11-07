@@ -111,6 +111,16 @@ namespace APMTestDemo
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int SetUserInfo(string userID, string userName, string userAccount);
 
+
+        /// <summary>
+        /// 设置扩展用户信息
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int SetUserInfoEx(string userInfo);
+
+
         /// <summary>
         /// 添加日志
         /// </summary>

@@ -255,8 +255,7 @@ namespace APMReport
 			root["logtime"] = Util::GetTimeNowStr();
 			root["module"] = ConvertModuleText(DATA_MODULE_HTTP);
 			root["trace_id"] = traceID;
-			auto userInfo = User::GetUserInfo();
-			root["userId"] = userInfo.m_sUserID;
+			
 			root["httpURL"] = url;
 			if (logType.empty())
 			{
@@ -315,15 +314,6 @@ namespace APMReport
 		root["subname"] = subName;
 		root["errCode"] = errorCode;
 
-		auto userInfo = User::GetUserInfo();
-		//账户登录前的异常上报，此时允许userID为空
-		if (userInfo.m_sUserID.empty())
-		{
-			LOGWARN("userID is empty,please invoke SetUserInfo() ");
-			return ERROR_CODE_NULLUSERINFO;
-		}
-		root["userId"] = userInfo.m_sUserID;
-
 		Json::Reader readerExt;
 		Json::Value extJson;
 		if (!extData.empty() && readerExt.parse(extData, extJson))
@@ -352,6 +342,23 @@ namespace APMReport
 			if (!reader.parse(msg, root))
 			{
 				return ERROR_CODE_DATA_JSON;
+			}
+		}
+		//赋值用户信息
+		auto userInfoEx = User::GetUserInfoEx();
+		if (userInfoEx.empty())
+		{
+			auto userInfo = User::GetUserInfo();
+			root["userId"] = userInfo.m_sUserID;
+		}
+		else
+		{
+			Json::Value::Members member = userInfoEx.getMemberNames();
+			for (Json::Value::Members::iterator iter = member.begin(); iter != member.end(); ++iter)
+			{
+				std::string name = *iter;
+				std::string value = userInfoEx[name].asString();
+				root[name] = value;
 			}
 		}
 		return 0;
