@@ -186,7 +186,7 @@ namespace APMReport
 	}
 
 
-	int TaskManager::AddTraceLog(const std::string& traceID, const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
+	int TaskManager::AddTraceLog(const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		//（后台）采集开关关闭
@@ -203,7 +203,7 @@ namespace APMReport
 			return ERROR_CODE_OUTOFCACHE;
 		}
 
-		int build = BuildLogData(traceID, module, logType, bussiness, subName, errorCode, msg, extData);
+		int build = BuildLogData(module, logType, bussiness, subName, errorCode, msg, extData);
 		if (build != 0)
 		{
 			return build;
@@ -218,7 +218,7 @@ namespace APMReport
 		return 0;
 	}
 
-	int TaskManager::AddHTTPLog(const std::string& traceID, const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData)
+	int TaskManager::AddHTTPLog(const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData)
 	{
 		try
 		{
@@ -254,7 +254,6 @@ namespace APMReport
 			}
 			root["logtime"] = Util::GetTimeNowStr();
 			root["module"] = ConvertModuleText(DATA_MODULE_HTTP);
-			root["trace_id"] = traceID;
 			
 			root["httpURL"] = url;
 			if (logType.empty())
@@ -288,7 +287,7 @@ namespace APMReport
 	}
 
 
-	int TaskManager::BuildLogData(const std::string& traceID, const std::string& moduleName, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
+	int TaskManager::BuildLogData(const std::string& moduleName, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
 	{
 		////容错预防：上层客户端短时间内发送过量重复日志
 		//for (auto i : m_veclogMsgs)
@@ -306,7 +305,6 @@ namespace APMReport
 			return ERROR_CODE_DATA_JSON;
 		}
 
-		root["trace_id"] = traceID;
 		root["logtime"] = Util::GetTimeNowStr();
 		root["module"] = moduleName.empty() ? "pc" : moduleName;
 		root["error_type"] = logType.empty() ? "error" : logType;

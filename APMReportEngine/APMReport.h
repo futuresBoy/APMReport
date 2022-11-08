@@ -122,19 +122,27 @@ extern "C"
 
 	/*
 		功能：设置用户信息
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
 		参数：账号userid（唯一）
 		参数：账户名称/昵称（不唯一，可为空）
 		参数：账户代码（唯一，可为空）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t SetUserInfo(const char* userID, const char* userName, const char* userAccount);
+	APM_REPORT_API int32_t SetUserInfo(const char* appID, const char* userID, const char* userName, const char* userAccount);
 
 	/*
 		功能：设置拓展的用户信息
+		参数：appID 应用标识，cmdb上登记的客户端程序英文编码
 		参数：客户端用户信息（指定Json格式，参考：{"userID":"","userName":"","level2":"","tradeAccount":""}）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t SetUserInfoEx(const char* userInfo);
+	APM_REPORT_API int32_t SetUserInfoEx(const char* appID, const char* userInfo);
+
+	/*
+		功能：获取链路追踪ID,用于客户端提供TradeID给其他业务方
+		返回值：随机唯一字符串
+	*/
+	APM_REPORT_API const char* GetTraceID();
 
 	/*
 		功能：记录异常日志
@@ -179,14 +187,6 @@ extern "C"
 									const char* extData);
 
 	/*
-		功能：获取链路追踪ID,用于客户端提供TradeID给其他业务方
-		出参：outBuffer 链路追踪ID（空间由外部申请，外部释放）
-		入/出参：length 外部为字符申请的空间长度为入参，出参为输出的字符长度
-		返回值：0 成功，-1 参数不正确，-2 输出的字符串空间长度不够，-3 内部异常
-	*/
-	APM_REPORT_API int32_t GetTraceID(char* outBuffer, int32_t& length);
-
-	/*
 		功能：获取链路追踪ID的Header,用于客户端提供TradeID给其他业务方
 			请求HTTP的时候，附上TradeID在请求头里
 		参数：traceID 链路追踪ID，由GetTraceID获取到
@@ -195,6 +195,7 @@ extern "C"
 		返回值：0 成功，-1 参数不正确，-2 输出的字符串空间长度不够，-3 内部异常
 	*/
 	APM_REPORT_API int32_t GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length);
+
 
 }
 #endif // __cplusplus

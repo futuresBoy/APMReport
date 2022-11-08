@@ -202,15 +202,20 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 	return 0;
 }
 
-APM_REPORT_API int SetUserInfo(const char* userID, const char* userName, const char* userAccount)
+APM_REPORT_API int SetUserInfo(const char* appID, const char* userID, const char* userName, const char* userAccount)
 {
 	return User::SetUserInfo(userID, userName, userAccount);
 }
 
 
-APM_REPORT_API int SetUserInfoEx(const char* userInfo)
+APM_REPORT_API int SetUserInfoEx(const char* appID, const char* userInfo)
 {
 	return User::SetUserInfoEx(userInfo);
+}
+
+APM_REPORT_API const char* GetTraceID()
+{
+	return Util::GetRandomUUID().c_str();
 }
 
 APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char* logType, const char* bussiness, const char* subName, const char* errorCode, const char* msg, const char* extData)
@@ -219,7 +224,6 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	auto traceID = Util::GetRandomUUID();
 	try
 	{
 		//考虑针对不同地域语言，统一用UTF-8编码
@@ -230,7 +234,7 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
 		std::string strMsg = converter2.to_bytes(wstrMsg);
 
-		return TaskManager::GetInstance().AddTraceLog(traceID, module, logType, bussiness, subName, errorCode, strMsg, extData);
+		return TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
 	}
 	catch (const std::exception & e)
 	{
@@ -245,7 +249,6 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	auto traceID = Util::GetRandomUUID();
 	try
 	{
 		//考虑针对不同地域语言，统一用UTF-8编码
@@ -255,35 +258,8 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 		std::wstring wstrMsg(wideString);
 		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
 		std::string strMsg = converter2.to_bytes(wstrMsg);
-		
-		return TaskManager::GetInstance().AddHTTPLog(traceID, logType, bussiness, url, errorCode, costTime, strMsg, extData);
-	}
-	catch (const std::exception & e)
-	{
-		LOGFATAL(e.what());
-		return ERROR_CODE_INNEREXCEPTION;
-	}
-}
 
-APM_REPORT_API int GetTraceID(char* outBuffer, int32_t& length)
-{
-	if (outBuffer == nullptr)
-	{
-		return ERROR_CODE_PARAMS;
-	}
-	try
-	{
-		//skywalking的traceID格式
-		std::string uuid = Util::GetRandomUUID();
-
-		if (uuid.length() >= length)
-		{
-			length = uuid.length() + 1;
-			return ERROR_CODE_OUTOFSIZE;
-		}
-		length = uuid.length() + 1;
-		memcpy(outBuffer, uuid.c_str(), length);
-		return 0;
+		return TaskManager::GetInstance().AddHTTPLog(logType, bussiness, url, errorCode, costTime, strMsg, extData);
 	}
 	catch (const std::exception & e)
 	{

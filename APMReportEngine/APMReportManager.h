@@ -128,10 +128,10 @@ namespace APMReport
 		int CreateRequestJson(Json::Value& root);
 
 		//添加链路日志
-		int AddTraceLog(const std::string& traceID, const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
+		int AddTraceLog(const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
 
 		//添加HTTP日志
-		int AddHTTPLog(const std::string& traceID, const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData);
+		int AddHTTPLog(const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData);
 
 	public:
 		PostErrorLogFunc m_funcPostErrorInfo;
@@ -142,7 +142,7 @@ namespace APMReport
 		int GenerateRoot(const std::string& msg, Json::Value& root);
 
 		/*构建上报后台的日志数据*/
-		int BuildLogData(const std::string& traceID, const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
+		int BuildLogData(const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
 
 		/*监控模块定义转换为对应的文本，用于构建后台索引*/
 		std::string ConvertModuleText(int moduleType);
