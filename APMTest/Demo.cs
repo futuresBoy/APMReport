@@ -85,7 +85,7 @@ namespace APMTestDemo
             int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
             Console.WriteLine("SetUserInfo: " + userInfo);
 
-            int userInfoEx = APMDllImport.SetUserInfoEx("{\"userID\":\"12345678\",\"userName\":\"xukan\",\"innerUser\":\"true\"}");
+            int userInfoEx = APMDllImport.SetUserInfoEx(baseInfo.app_id, "{\"userID\":\"12345678\",\"userName\":\"xukan\",\"innerUser\":\"true\"}");
             Console.WriteLine("SetUserInfoEx: " + userInfoEx);
 
             ////异常日志上报
@@ -106,12 +106,12 @@ namespace APMTestDemo
             int addErrorLog2 = APMDllImport.AddErrorLog(baseInfo.app_id, "", "error", "Demo", "GoMethod", "-1", jsonMsg, extData);
             Console.WriteLine("AddErrorLog: " + addErrorLog2);
 
-            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "","ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "404", 500, "Page Not Fund","");
-            httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id,"", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/default/appconfig/getall/?app_key=qhtpc", "", 5000, "","");
+            int httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "", "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=1111111111", "404", 500, "Page Not Fund", "");
+            httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/default/appconfig/getall/?app_key=qhtpc", "", 5000, "", "");
             for (int i = 0; i < 5; i++)
             {
-                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "","ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表","");
-                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id,"", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口","");
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "", "ClassDemo", "http://ftapi.10jqka.com.cn/ljapi/futuresactivity/simulatetradematch/join/?userid=xd9HniY2%2BUuUz%2FMvBG%2ByFA%3D%3D", "", 300, "模拟交易用户参与的大赛列表", "");
+                httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口", "");
             }
             Console.WriteLine("AddHTTPLog: " + httpLog);
         }

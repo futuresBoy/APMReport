@@ -364,7 +364,6 @@ namespace APMReport
 
 	void TaskManager::ProcessErrorLogReport(ReportErrorTask& task)
 	{
-		LOGINFO("ReportError Thread in.");
 		//上传间隔（s）
 		int interval = 0;
 		while (!m_bThreadExit)
@@ -396,7 +395,6 @@ namespace APMReport
 
 	void TaskManager::ProcessPerformanceReport(ReportPerformanceTask& task)
 	{
-		LOGINFO("ReportPerformance Thread in.");
 		//上传间隔（s）
 		int interval = 0;
 		while (!m_bThreadExit)
@@ -427,29 +425,32 @@ namespace APMReport
 
 	int TaskManager::UploadErrorLogData()
 	{
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-		if (m_veclogMsgs.size() == 0)
-		{
-			return 0;
-		}
-		//异常日志上报开关关了
-		if (!g_reportErrorTask.m_bReportSwitch)
-		{
-			m_veclogMsgs.clear();
-			return 0;
-		}
 		Json::Value root;
-		int result = CreateRequestJson(root);
-		if (result != 0)
 		{
-			return result;
+			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+			if (m_veclogMsgs.size() == 0)
+			{
+				return 0;
+			}
+			//异常日志上报开关关了
+			if (!g_reportErrorTask.m_bReportSwitch)
+			{
+				m_veclogMsgs.clear();
+				return 0;
+			}
+			
+			int result = CreateRequestJson(root);
+			if (result != 0)
+			{
+				return result;
+			}
+			for (auto msg : m_veclogMsgs)
+			{
+				root["msgs"].append(msg);
+			}
+			m_veclogMsgs.clear();
 		}
-		for (auto msg : m_veclogMsgs)
-		{
-			root["msgs"].append(msg);
-		}
-		m_veclogMsgs.clear();
-
+		
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 
@@ -473,33 +474,37 @@ namespace APMReport
 
 	int TaskManager::UploadPerformanceData()
 	{
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-		if (m_mapUrls.size() == 0)
-		{
-			return 0;
-		}
 		Json::Value root;
-		int result = CreateRequestJson(root);
-		if (result != 0)
-		{
-			return result;
-		}
-
 		int totalCount = 0;
-		for (auto msg : m_mapUrls)
 		{
-			totalCount += msg.second;
-			Json::Value jurl;
-			jurl["name"] = "apm_client_http_request_url_count";
-			jurl["type"] = 0;
-			jurl["count"] = msg.second;
-			jurl["sum"] = msg.second;
-			Json::Value jItem;
-			jItem["url"] = msg.first;
-			jurl["label"] = jItem;
-			root["metrics"].append(jurl);
+			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+			if (m_mapUrls.size() == 0)
+			{
+				return 0;
+			}
+			
+			int result = CreateRequestJson(root);
+			if (result != 0)
+			{
+				return result;
+			}
+
+			for (auto msg : m_mapUrls)
+			{
+				totalCount += msg.second;
+				Json::Value jurl;
+				jurl["name"] = "apm_client_http_request_url_count";
+				jurl["type"] = 0;
+				jurl["count"] = msg.second;
+				jurl["sum"] = msg.second;
+				Json::Value jItem;
+				jItem["url"] = msg.first;
+				jurl["label"] = jItem;
+				root["metrics"].append(jurl);
+			}
+			m_mapUrls.clear();
 		}
-		m_mapUrls.clear();
+		
 		Json::Value jTotal;
 		jTotal["name"] = "apm_client_http_request_count";
 		jTotal["type"] = 0;

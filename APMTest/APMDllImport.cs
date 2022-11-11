@@ -118,7 +118,7 @@ namespace APMTestDemo
         /// <param name="msg"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int SetUserInfoEx(string userInfo);
+        public static extern int SetUserInfoEx(string appID, string userInfo);
 
 
         /// <summary>
