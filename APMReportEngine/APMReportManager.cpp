@@ -58,7 +58,7 @@ namespace APMReport
 		m_bInited = true;
 		m_bThreadExit = false;
 		m_pThreadErrorLog = new std::thread([this] { this->TaskManager::ProcessErrorLogReport(g_reportErrorTask); });
-		m_pThreadPerformance = new std::thread([this] { this->TaskManager::ProcessPerformanceReport(g_reportPerfTask); });
+
 		LOGINFO("Init finished!");
 		return 0;
 	}
@@ -192,26 +192,29 @@ namespace APMReport
 		//（后台）采集开关关闭
 		if (!g_reportErrorTask.m_bCollectSwitch)
 		{
+			if (m_veclogMsgs.size() > 0)
+			{
+				m_veclogMsgs.clear();
+			}
 			return ERROR_CODE_SWITCHOFF;
 		}
 
 		//超过最大缓存上报
-		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nCacheMaxSize)
+		if (m_veclogMsgs.size() >= g_reportErrorTask.m_config.m_nCacheMaxSize)
 		{
 			//触发立即上报
 			UploadErrorLogData();
 			return ERROR_CODE_OUTOFCACHE;
 		}
 
-		int build = BuildLogData(module, logType, bussiness, subName, errorCode, msg, extData);
-		if (build != 0)
+		int result = BuildLogData(module, logType, bussiness, subName, errorCode, msg, extData);
+		if (result != 0)
 		{
-			return build;
+			return result;
 		}
 
-
 		//到达阈值条数上报
-		if (m_veclogMsgs.size() > g_reportErrorTask.m_config.m_nSendCache)
+		if (m_veclogMsgs.size() >= g_reportErrorTask.m_config.m_nSendCount)
 		{
 			UploadErrorLogData();
 		}
@@ -223,6 +226,17 @@ namespace APMReport
 		try
 		{
 			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+			//（后台）采集开关关闭
+			if (!g_reportErrorTask.m_bCollectSwitch)
+			{
+				return ERROR_CODE_SWITCHOFF;
+			}
+
+			//需要用到性能上报线程时再创建
+			if (m_pThreadPerformance == nullptr)
+			{
+				m_pThreadPerformance = new std::thread([this] { this->TaskManager::ProcessPerformanceReport(g_reportPerfTask); });
+			}
 
 			//裁剪后的URL，用于后端计数
 			std::string extractUrl = Util::ExtractURL(url);
@@ -240,12 +254,7 @@ namespace APMReport
 			{
 				return 0;
 			}
-			//（后台）采集开关关闭
-			if (!g_reportErrorTask.m_bCollectSwitch)
-			{
-				return ERROR_CODE_SWITCHOFF;
-			}
-
+			
 			//构建HTTP错误日志
 			Json::Value root;
 			if (GenerateRoot(msg, root) != 0)
@@ -254,7 +263,7 @@ namespace APMReport
 			}
 			root["logtime"] = Util::GetTimeNowStr();
 			root["module"] = ConvertModuleText(DATA_MODULE_HTTP);
-			
+
 			root["httpURL"] = url;
 			if (logType.empty())
 			{
@@ -438,7 +447,7 @@ namespace APMReport
 				m_veclogMsgs.clear();
 				return 0;
 			}
-			
+
 			int result = CreateRequestJson(root);
 			if (result != 0)
 			{
@@ -450,7 +459,7 @@ namespace APMReport
 			}
 			m_veclogMsgs.clear();
 		}
-		
+
 		auto jsonWriter = Json::FastWriter();
 		jsonWriter.omitEndingLineFeed();
 
@@ -482,7 +491,7 @@ namespace APMReport
 			{
 				return 0;
 			}
-			
+
 			int result = CreateRequestJson(root);
 			if (result != 0)
 			{
@@ -504,7 +513,7 @@ namespace APMReport
 			}
 			m_mapUrls.clear();
 		}
-		
+
 		Json::Value jTotal;
 		jTotal["name"] = "apm_client_http_request_count";
 		jTotal["type"] = 0;

@@ -196,6 +196,10 @@ extern "C"
 	*/
 	APM_REPORT_API int32_t GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length);
 
+	/*
+		¹¦ÄÜ£º¹Ø±Õ
+	*/
+	APM_REPORT_API int32_t Close();
 
 }
 #endif // __cplusplus

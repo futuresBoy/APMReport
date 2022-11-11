@@ -297,3 +297,8 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 		return ERROR_CODE_INNEREXCEPTION;
 	}
 }
+
+APM_REPORT_API int32_t Close()
+{
+	return -1;
+}

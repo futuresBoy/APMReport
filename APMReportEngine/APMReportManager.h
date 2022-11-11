@@ -20,31 +20,30 @@ namespace APMReport
 	//阈值配置信息
 	struct ReportConfig
 	{
-		//默认配置
-		ReportConfig()
+		ReportConfig(int minInterval = 15, int maxInterval = 120, int count = 50, int maxSize = 100, bool sendImmediately = false, int retry = 0)
 		{
-			m_nCacheMaxSize = 100;
-			m_bSendImmediately = false;
-			m_nSendMinInterval = 15;
-			m_nSendMaxInterval = 120;
-			m_nSendCache = 50;
-			m_nRetry = 0;
+			m_nSendMinInterval = minInterval;
+			m_nSendMaxInterval = maxInterval;
+			m_nSendCount = count;
+			m_nCacheMaxSize = maxSize;
+			m_bSendImmediately = sendImmediately;
+			m_nRetry = retry;
 		}
-
-		//缓存最大容量
-		int m_nCacheMaxSize;
-
-		//立即上传
-		bool m_bSendImmediately;
-
-		//发送阈值条数（缓存达到条数则发送）
-		int m_nSendCache;
 
 		//发送最小时间间隔（s），预防瞬时请求数过多
 		int m_nSendMinInterval;
 
 		//发送最大时间间隔（s）
 		int m_nSendMaxInterval;
+
+		//发送阈值条数（缓存达到条数则发送）
+		int m_nSendCount;
+
+		//缓存最大容量
+		int m_nCacheMaxSize;
+
+		//立即上传
+		bool m_bSendImmediately;
 
 		//重试
 		int m_nRetry;
