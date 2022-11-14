@@ -451,6 +451,7 @@ namespace APMReport
 			int result = CreateRequestJson(root);
 			if (result != 0)
 			{
+				LOGERROR("UploadErrorLog...CreateRequestJson Error");
 				return result;
 			}
 			for (auto msg : m_veclogMsgs)
@@ -469,6 +470,7 @@ namespace APMReport
 		std::string aesMsg;
 		if (APMCryptogram::AesEncrypt(zipData, aesMsg) != 0)
 		{
+			LOGERROR("UploadErrorLog...Encrypt Error");
 			return ERROR_CODE_DATA_ENCRYPT;
 		}
 		root["msgs"] = aesMsg;
@@ -476,6 +478,7 @@ namespace APMReport
 		std::string output = jsonWriter.write(root);
 		if (nullptr != m_funcPostErrorInfo)
 		{
+			LOGINFO("UploadErrorLog...");
 			m_funcPostErrorInfo(output.c_str(), output.length(), "", 0);
 		}
 		return 0;

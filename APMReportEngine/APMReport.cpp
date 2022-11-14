@@ -202,15 +202,42 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 	return 0;
 }
 
+//考虑不同地域语言，统一用UTF-8编码
+static std::string ConvertUTF8(const char* msg)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	std::wstring wideString = converter.from_bytes(msg);
+
+	std::wstring wstrMsg(wideString);
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
+	return converter2.to_bytes(wstrMsg);
+}
+
 APM_REPORT_API int SetUserInfo(const char* appID, const char* userID, const char* userName, const char* userAccount)
 {
+	if (appID == nullptr || userID == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
 	return User::SetUserInfo(userID, userName, userAccount);
 }
 
 
 APM_REPORT_API int SetUserInfoEx(const char* appID, const char* userInfo)
 {
-	return User::SetUserInfoEx(userInfo);
+	if (appID == nullptr || userInfo == nullptr)
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	try
+	{
+		return User::SetUserInfoEx(ConvertUTF8(userInfo));
+	}
+	catch (const std::exception & e)
+	{
+		LOGFATAL(e.what());
+		return ERROR_CODE_INNEREXCEPTION;
+	}
 }
 
 APM_REPORT_API const char* GetTraceID()
@@ -226,15 +253,18 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 	}
 	try
 	{
-		//考虑针对不同地域语言，统一用UTF-8编码
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-		std::wstring wideString = converter.from_bytes(msg);
+		int result = TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, ConvertUTF8(msg), extData);
 
-		std::wstring wstrMsg(wideString);
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
-		std::string strMsg = converter2.to_bytes(wstrMsg);
+#if  DEBUG
+		std::string s = "AddErrorLog: ";
+		std::string sType(logType);
+		std::string out = s + sType + " " + strMsg + " result:";
+		out += result;
+		LOGINFO(out.c_str());
+#endif //  DEBUG
 
-		return TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
+		return result;
+		
 	}
 	catch (const std::exception & e)
 	{
@@ -251,15 +281,7 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 	}
 	try
 	{
-		//考虑针对不同地域语言，统一用UTF-8编码
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-		std::wstring wideString = converter.from_bytes(msg);
-
-		std::wstring wstrMsg(wideString);
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> converter2;
-		std::string strMsg = converter2.to_bytes(wstrMsg);
-
-		return TaskManager::GetInstance().AddHTTPLog(logType, bussiness, url, errorCode, costTime, strMsg, extData);
+		return TaskManager::GetInstance().AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
 	}
 	catch (const std::exception & e)
 	{

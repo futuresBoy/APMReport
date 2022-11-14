@@ -39,9 +39,9 @@ namespace APMReport
 		return g_userInfo;
 	}
 
-	int User::SetUserInfoEx(const char* msg)
+	int User::SetUserInfoEx(std::string msg)
 	{
-		if (msg == nullptr)
+		if (msg.empty())
 		{
 			return ERROR_CODE_PARAMS;
 		}

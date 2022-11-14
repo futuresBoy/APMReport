@@ -33,7 +33,7 @@ namespace APMReport
 		/*获取用户基础信息*/
 		static UserInfo GetUserInfo();
 		/*设置扩展的用户基础信息*/
-		static int SetUserInfoEx(const char* msg);
+		static int SetUserInfoEx(std::string msg);
 		static Json::Value GetUserInfoEx();
 	};
 
