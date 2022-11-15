@@ -253,18 +253,16 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 	}
 	try
 	{
-		int result = TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, ConvertUTF8(msg), extData);
+		std::string strMsg = ConvertUTF8(msg);
+		int result = TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
 
-#if  DEBUG
-		std::string s = "AddErrorLog: ";
+#ifdef _DEBUG
 		std::string sType(logType);
-		std::string out = s + sType + " " + strMsg + " result:";
-		out += result;
+		std::string out = "AddErrorLog: " + sType + " " + strMsg + " result:" + std::to_string(result);
 		LOGINFO(out.c_str());
-#endif //  DEBUG
+#endif // DEBUG
 
 		return result;
-		
 	}
 	catch (const std::exception & e)
 	{

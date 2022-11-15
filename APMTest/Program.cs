@@ -11,7 +11,10 @@ namespace APMTestDemo
     {
         static void Main(string[] args)
         {
-            new Demo().Go();
+            //new Demo().Go();
+            new HxPerformanceTest().Test();
+            
+
             Console.ReadLine();
         }
 

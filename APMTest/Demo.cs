@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace APMTestDemo
 {
     /// <summary>
-    /// 演示C#调用上报SDK的方式和流程
+    /// C#调用上报SDK的方式和流程Demo
     /// </summary>
     class Demo
     {
@@ -82,10 +82,10 @@ namespace APMTestDemo
             Console.WriteLine("BuildPerformanceData: " + text2);
 
             //设置用户信息（上传异常日志需要）
-            int userInfo = APMDllImport.SetUserInfo("1234567", "xukan", "xukan2");
+            int userInfo = APMDllImport.SetUserInfo("1234567", "徐侃", "xukan2");
             Console.WriteLine("SetUserInfo: " + userInfo);
 
-            int userInfoEx = APMDllImport.SetUserInfoEx(baseInfo.app_id, "{\"userID\":\"12345678\",\"userName\":\"xukan\",\"innerUser\":\"true\"}");
+            int userInfoEx = APMDllImport.SetUserInfoEx(baseInfo.app_id, "{\"userID\":\"12345678\",\"userName\":\"徐侃\",\"innerUser\":\"true\"}");
             Console.WriteLine("SetUserInfoEx: " + userInfoEx);
 
             ////异常日志上报
