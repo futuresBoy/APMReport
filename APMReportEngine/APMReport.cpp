@@ -253,6 +253,13 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 	}
 	try
 	{
+		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		if (baseInfoMD5.empty())
+		{
+			LOGERROR("appID can not find, please set clientInfo first.");
+			return ERROR_CODE_NULLCLIENTINFO;
+		}
+
 		std::string strMsg = ConvertUTF8(msg);
 		int result = TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
 
@@ -279,6 +286,13 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 	}
 	try
 	{
+		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		if (baseInfoMD5.empty())
+		{
+			LOGERROR("appID can not find, please set clientInfo first.");
+			return ERROR_CODE_NULLCLIENTINFO;
+		}
+
 		return TaskManager::GetInstance().AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
 	}
 	catch (const std::exception & e)
