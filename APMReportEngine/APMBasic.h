@@ -1,7 +1,7 @@
 #pragma once
 
 //版本号
-#define SDKVERSION "1.2.0.1"
+#define SDKVERSION "1.2.0.2"
 
 /*模块定义*/
 //未指定模块
