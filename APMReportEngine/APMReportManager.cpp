@@ -254,7 +254,7 @@ namespace APMReport
 			{
 				return 0;
 			}
-			
+
 			//构建HTTP错误日志
 			Json::Value root;
 			if (GenerateRoot(msg, root) != 0)
@@ -439,14 +439,18 @@ namespace APMReport
 			std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 			if (m_veclogMsgs.size() == 0)
 			{
+				LOGINFO("ProcessErrorLog...");
 				return 0;
 			}
 			//异常日志上报开关关了
 			if (!g_reportErrorTask.m_bReportSwitch)
 			{
+				LOGINFO("ProcessErrorLog...ReportSwitch Off");
 				m_veclogMsgs.clear();
 				return 0;
 			}
+			std::string localLog = "ProcessErrorLog...Count:" + std::to_string(m_veclogMsgs.size());
+			LOGINFO(localLog.c_str());
 
 			int result = CreateRequestJson(root);
 			if (result != 0)
