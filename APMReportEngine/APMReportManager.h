@@ -20,7 +20,7 @@ namespace APMReport
 	//„–÷µ≈‰÷√–≈œ¢
 	struct ReportConfig
 	{
-		ReportConfig(int minInterval = 15, int maxInterval = 20, int count = 50, int maxSize = 100, bool sendImmediately = false, int retry = 0)
+		ReportConfig(int minInterval = 15, int maxInterval = 120, int count = 50, int maxSize = 100, bool sendImmediately = false, int retry = 0)
 		{
 			m_nSendMinInterval = minInterval;
 			m_nSendMaxInterval = maxInterval;
