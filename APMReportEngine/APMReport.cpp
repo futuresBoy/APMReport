@@ -5,7 +5,8 @@
 #include "APMCryptogram.h"
 #include "APMReport.h"
 #include "APMReportManager.h"
-#include "ClientBasicInfo.h"
+#include "ClientManager.h"
+#include "User.h"
 #include <codecvt>
 
 using namespace APMReport;
@@ -30,7 +31,7 @@ APM_REPORT_API const char* GetSDKVersion()
 
 APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& length)
 {
-	if (baseInfo == nullptr || baseInfo == "")
+	if (CHECK_ISNULLOREMPTY(baseInfo))
 	{
 		LOGERROR("baseInfo is null or empty.");
 		return ERROR_CODE_PARAMS;
@@ -43,6 +44,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 		if (!reader.parse(baseInfo, base))
 		{
 			LOGERROR("baseInfo is not json.");
+			LOGINFO(baseInfo);
 			return ERROR_CODE_DATA_JSON;
 		}
 		std::string appID = base["app_id"].asString();
@@ -57,7 +59,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 			LOGERROR("d_uuid is null or empty.");
 			return ERROR_CODE_DATA_JSON;
 		}
-		Client::SetDeviceUUID(uuid);
+		ClientManager::SetDeviceUUID(uuid);
 		base.removeMember("d_uuid");
 		base["s_ver"] = SDKVERSION;
 
@@ -70,7 +72,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 			LOGERROR("baseInfo to MD5 Error.");
 			return ERROR_CODE_DATA_ENCODE;
 		}
-		Client::SetBaseInfo(appID, appInfoMD5);
+		ClientManager::SetBaseInfo(appID, appInfoMD5);
 
 		//基础信息，该字段需要加密+base64转码传输
 		std::string encodeBaseInfo;
@@ -115,7 +117,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 
 APM_REPORT_API int SetReportConfig(const char* msg)
 {
-	if (msg == nullptr || msg == "")
+	if (CHECK_ISNULLOREMPTY(msg))
 	{
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
@@ -125,7 +127,7 @@ APM_REPORT_API int SetReportConfig(const char* msg)
 
 APM_REPORT_API int SetReportSwitch(const char* msg)
 {
-	if (msg == nullptr || msg == "")
+	if (CHECK_ISNULLOREMPTY(msg))
 	{
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
@@ -141,12 +143,12 @@ APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
 
 APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char* outText, int32_t& length)
 {
-	if (appID == nullptr || appID == "")
+	if (CHECK_ISNULLOREMPTY(appID))
 	{
 		LOGERROR("appID is null or empty.");
 		return ERROR_CODE_PARAMS;
 	}
-	if (msg == nullptr || msg == "")
+	if (CHECK_ISNULLOREMPTY(msg))
 	{
 		LOGERROR("msg is null or empty.");
 		return ERROR_CODE_PARAMS;
@@ -170,7 +172,7 @@ APM_REPORT_API int BuildPerformanceData(const char* appID, const char* msg, char
 			return ERROR_CODE_DATA_NULLKEY;
 		}
 
-		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		std::string baseInfoMD5 = ClientManager::GetBaseInfo(appID);
 		if (baseInfoMD5.empty())
 		{
 			LOGERROR("appID can not find, please set clientInfo first.");
@@ -215,7 +217,7 @@ static std::string ConvertUTF8(const char* msg)
 
 APM_REPORT_API int SetUserInfo(const char* appID, const char* userID, const char* userName, const char* userAccount)
 {
-	if (appID == nullptr || userID == nullptr)
+	if (CHECK_ISNULL(appID) || CHECK_ISNULL(userID))
 	{
 		return ERROR_CODE_PARAMS;
 	}
@@ -225,7 +227,7 @@ APM_REPORT_API int SetUserInfo(const char* appID, const char* userID, const char
 
 APM_REPORT_API int SetUserInfoEx(const char* appID, const char* userInfo)
 {
-	if (appID == nullptr || userInfo == nullptr)
+	if (CHECK_ISNULL(appID) || CHECK_ISNULL(userInfo))
 	{
 		return ERROR_CODE_PARAMS;
 	}
@@ -238,6 +240,7 @@ APM_REPORT_API int SetUserInfoEx(const char* appID, const char* userInfo)
 		LOGFATAL(e.what());
 		return ERROR_CODE_INNEREXCEPTION;
 	}
+	return 0;
 }
 
 APM_REPORT_API const char* GetTraceID()
@@ -247,13 +250,15 @@ APM_REPORT_API const char* GetTraceID()
 
 APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char* logType, const char* bussiness, const char* subName, const char* errorCode, const char* msg, const char* extData)
 {
-	if (appID == nullptr || module == nullptr || logType == nullptr || bussiness == nullptr || subName == nullptr || errorCode == nullptr || msg == nullptr)
+	if (CHECK_ISNULL(appID) || CHECK_ISNULL(module) || CHECK_ISNULL(logType) || CHECK_ISNULL(bussiness)
+		|| CHECK_ISNULL(subName) || CHECK_ISNULL(errorCode) || CHECK_ISNULL(msg))
 	{
+		LOGERROR("one of params is null.");
 		return ERROR_CODE_PARAMS;
 	}
 	try
 	{
-		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		std::string baseInfoMD5 = ClientManager::GetBaseInfo(appID);
 		if (baseInfoMD5.empty())
 		{
 			LOGERROR("appID can not find, please set clientInfo first.");
@@ -276,17 +281,20 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 		LOGFATAL(e.what());
 		return ERROR_CODE_INNEREXCEPTION;
 	}
+	return 0;
 }
 
 APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char* bussiness, const char* url, const char* errorCode, int costTime, const char* msg, const char* extData)
 {
-	if (appID == nullptr || bussiness == nullptr || url == nullptr || errorCode == nullptr)
+	if (CHECK_ISNULL(appID) || CHECK_ISNULL(logType) || CHECK_ISNULL(bussiness)
+		|| CHECK_ISNULL(url) || CHECK_ISNULL(errorCode) || CHECK_ISNULL(msg))
 	{
+		LOGERROR("one of params is null.");
 		return ERROR_CODE_PARAMS;
 	}
 	try
 	{
-		std::string baseInfoMD5 = Client::GetBaseInfo(appID);
+		std::string baseInfoMD5 = ClientManager::GetBaseInfo(appID);
 		if (baseInfoMD5.empty())
 		{
 			LOGERROR("appID can not find, please set clientInfo first.");
@@ -300,6 +308,7 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 		LOGFATAL(e.what());
 		return ERROR_CODE_INNEREXCEPTION;
 	}
+	return 0;
 }
 
 APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length)
@@ -308,7 +317,7 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	if (traceID == nullptr || traceID == "")
+	if (CHECK_ISNULLOREMPTY(traceID))
 	{
 		return ERROR_CODE_PARAMS;
 	}

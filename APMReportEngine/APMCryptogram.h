@@ -34,7 +34,9 @@ namespace APMReport
 		//加密后的AES密钥
 		static std::string g_cipherAESKey;
 	public:
-
+		APMCryptogram();
+		~APMCryptogram();
+	public:
 		/*
 			功能：MD5
 			参数：msg 需要进行MD5的字符串

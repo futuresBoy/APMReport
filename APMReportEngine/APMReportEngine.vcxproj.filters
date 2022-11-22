@@ -48,11 +48,14 @@
     <ClInclude Include="APMCryptogram.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ClientBasicInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="random_generator.h">
       <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientManager.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -71,14 +74,17 @@
     <ClCompile Include="APMCryptogram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ClientBasicInfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="jsoncpp.cpp">
       <Filter>Source Files\Common</Filter>
     </ClCompile>
     <ClCompile Include="random_generator.cc">
       <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

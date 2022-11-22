@@ -3,7 +3,8 @@
 #include "APMCryptogram.h"
 #include "APMReportManager.h"
 #include "Util.h"
-#include "ClientBasicInfo.h"
+#include "ClientManager.h"
+#include "User.h"
 #include <codecvt>
 
 namespace APMReport
@@ -24,18 +25,29 @@ namespace APMReport
 	TaskManager::TaskManager()
 	{
 		m_bInited = false;
+		m_pThreadErrorLog = nullptr;
+		m_pThreadPerformance = nullptr;
 	}
 
 	APMReport::TaskManager::~TaskManager()
 	{
-		if (m_pThreadErrorLog)
+		m_bInited = false;
+		m_bThreadExit = true;
+		if (m_pThreadErrorLog != nullptr)
 		{
-			m_bInited = false;
-			m_bThreadExit = true;
-			m_pThreadErrorLog->join();
+			if (m_pThreadErrorLog->joinable())
+			{
+				m_pThreadErrorLog->join();
+			}
 			delete m_pThreadErrorLog;
 			m_pThreadErrorLog = nullptr;
-			m_pThreadPerformance->join();
+		}
+		if (m_pThreadPerformance != nullptr)
+		{
+			if (m_pThreadPerformance->joinable())
+			{
+				m_pThreadPerformance->join();
+			}
 			delete m_pThreadPerformance;
 			m_pThreadPerformance = nullptr;
 		}
@@ -46,6 +58,7 @@ namespace APMReport
 	{
 		if (nullptr == funcPostErrorInfo || nullptr == funcPostPerformanceInfo)
 		{
+			LOGERROR("PostErrorLogFunc or PostPerformanceFunc is Null.");
 			return ERROR_CODE_PARAMS;
 		}
 		m_funcPostErrorInfo = funcPostErrorInfo;
@@ -125,22 +138,35 @@ namespace APMReport
 
 	int TaskManager::GetResponseData(const char* msg, Json::Value& data)
 	{
-		Json::Value root;
-		Json::Reader reader;
-		if (!reader.parse(msg, root))
+		if (CHECK_ISNULLOREMPTY(msg))
 		{
-			LOGERROR("Parse ResponseData to json failed!");
+			LOGERROR("Response data is null or empty.");
 			return ERROR_CODE_DATA_JSON;
 		}
+		try
+		{
+			Json::Value root;
+			Json::Reader reader;
+			if (!reader.parse(msg, root))
+			{
+				LOGERROR("Parse ResponseData to json failed!");
+				return ERROR_CODE_DATA_JSON;
+			}
 
-		int statusCode = root["status_code"].asInt();
-		auto statusMsg = root["status_msg"].asCString();
-		if (statusCode != 0)
+			int statusCode = root["status_code"].asInt();
+			if (statusCode != 0)
+			{
+				auto statusMsg = root["status_msg"].asCString();
+				LOGERROR("ResponseData is error,status_msg: %s", statusMsg);
+				return ERROR_CODE_DATA_JSON;
+			}
+			data = root["data"];
+		}
+		catch (const std::exception & e)
 		{
-			LOGERROR("ResponseData is error,status_msg: %s", statusMsg);
+			LOGERROR(e.what());
 			return ERROR_CODE_DATA_JSON;
 		}
-		data = root["data"];
 		return 0;
 	}
 
@@ -151,25 +177,33 @@ namespace APMReport
 
 	bool Task::LoadSwitch(const Json::Value& root)
 	{
-		std::string appID = root["app_id"].asCString();
-		//总开关（0：关 1：开）
-		int allSwitch = root["switch"].asInt();
-		if (allSwitch == 0)
+		try
 		{
-			this->m_bCollectSwitch = false;
-			this->m_bReportSwitch = false;
-			return true;
+			std::string appID = root["app_id"].asCString();
+			//总开关（0：关 1：开）
+			int allSwitch = root["switch"].asInt();
+			if (allSwitch == 0)
+			{
+				this->m_bCollectSwitch = false;
+				this->m_bReportSwitch = false;
+				return true;
+			}
+			int gatherSwitch = root["gather_switch"].asInt();
+			if (gatherSwitch == 0)
+			{
+				this->m_bCollectSwitch = false;
+			}
+			//上报开关
+			int upSwitch = root["up_switch"].asInt();
+			if (upSwitch == 0)
+			{
+				this->m_bReportSwitch = false;
+			}
 		}
-		int gatherSwitch = root["gather_switch"].asInt();
-		if (gatherSwitch == 0)
+		catch (const std::exception & e)
 		{
-			this->m_bCollectSwitch = false;
-		}
-		//上报开关
-		int upSwitch = root["up_switch"].asInt();
-		if (upSwitch == 0)
-		{
-			this->m_bReportSwitch = false;
+			LOGERROR(e.what());
+			return false;
 		}
 		return true;
 	}
@@ -286,28 +320,18 @@ namespace APMReport
 			}
 
 			m_veclogMsgs.push_back(root);
-			return 0;
 		}
 		catch (const std::exception & e)
 		{
 			LOGFATAL(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
 		}
+		return 0;
 	}
 
 
 	int TaskManager::BuildLogData(const std::string& moduleName, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData)
 	{
-		////容错预防：上层客户端短时间内发送过量重复日志
-		//for (auto i : m_veclogMsgs)
-		//{
-		//	//过滤重复日志
-		//	if (i["msg"] == msg)
-		//	{
-		//		return ERROR_CODE_LOGREPEATED;
-		//	}
-		//}
-
 		Json::Value root;
 		if (GenerateRoot(msg, root) != 0)
 		{
@@ -553,7 +577,7 @@ namespace APMReport
 
 	int TaskManager::CreateRequestJson(Json::Value& root)
 	{
-		auto baseInfo = Client::GetBaseInfoMap();
+		auto baseInfo = ClientManager::GetBaseInfoMap();
 		auto iter = baseInfo.begin();
 		if (iter == baseInfo.end())
 		{
@@ -561,7 +585,7 @@ namespace APMReport
 			return ERROR_CODE_NULLCLIENTINFO;
 		}
 		root["app_id"] = iter->first;
-		root["d_uuid"] = Client::GetDeviceUUID();
+		root["d_uuid"] = ClientManager::GetDeviceUUID();
 		std::string keyID, pubKey;
 		if (APMCryptogram::GetRSAPubKey(keyID, pubKey) < 0)
 		{

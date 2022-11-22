@@ -13,6 +13,14 @@ namespace APMReport
 	//（服务端）默认RSA公钥，预防服务端密钥获取失败
 	static std::string g_RSAPubkey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDA4JuF4q8mtCSGcaqTTVkgLc2msyh81zFLrjtEYRrl7O+fQLtI/uV4GAgVSidtpD8vsV8km/Wc/QUB0PiOYl6zRyt7/clVaWd9XH+KwE/eDneZW18QwPOoyIqrnAzQpK2gKBF0EUbo5D/FR2HU6VmoD1Of0U0Q01aZRhn9068YvwIDAQAB";
 
+	APMCryptogram::APMCryptogram()
+	{
+	}
+
+	APMCryptogram::~APMCryptogram()
+	{
+	}
+
 	std::string APMCryptogram::MD5(std::string msg)
 	{
 		if (msg.empty())
@@ -46,7 +54,7 @@ namespace APMReport
 
 	int APMCryptogram::SetRSAPubKey(const char* keyID, const char* rsaPubkey)
 	{
-		if (keyID == nullptr || keyID == "" || rsaPubkey == nullptr || rsaPubkey == "")
+		if (CHECK_ISNULLOREMPTY(keyID) || CHECK_ISNULLOREMPTY(rsaPubkey))
 		{
 			LOGERROR("rsa public key is empty!");
 			return ERROR_CODE_PARAMS;
@@ -145,13 +153,13 @@ namespace APMReport
 			); // StringSource
 
 			StringSource(cipher, true, new Base64Encoder(new StringSink(cipherBase64), false));
-			return 0;
 		}
 		catch (const std::exception & ex)
 		{
 			LOGFATAL(ex.what());
 			return ERROR_CODE_INNEREXCEPTION;
 		}
+		return 0;
 	}
 
 

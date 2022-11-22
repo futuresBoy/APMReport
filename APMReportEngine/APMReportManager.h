@@ -115,6 +115,14 @@ namespace APMReport
 		/*3.加载开关*/
 		int LoadSwitch(const char* msg);
 
+		//添加链路日志
+		int AddTraceLog(const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
+
+		//添加HTTP日志
+		int AddHTTPLog(const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData);
+
+	private:
+
 		/*
 		功能：获取（HTTP）接口响应的数据
 		入参：msg 原始的接口响应信息
@@ -125,17 +133,6 @@ namespace APMReport
 
 		/*创建基础的HTTP请求json结构*/
 		int CreateRequestJson(Json::Value& root);
-
-		//添加链路日志
-		int AddTraceLog(const std::string& module, const std::string& logType, const std::string& bussiness, const std::string& subName, const std::string& errorCode, const std::string& msg, const std::string& extData);
-
-		//添加HTTP日志
-		int AddHTTPLog(const std::string& logType, const std::string& bussiness, const std::string& url, const std::string& errorCode, int costTime, const std::string& msg, const std::string& extData);
-
-	public:
-		PostErrorLogFunc m_funcPostErrorInfo;
-		PostErrorLogFunc m_funcPostPerformance;
-	private:
 
 		/*生成基础的上报Json结构体*/
 		int GenerateRoot(const std::string& msg, Json::Value& root);
@@ -171,6 +168,9 @@ namespace APMReport
 		//停止运行
 		void Stop();
 
+	private:
+		PostErrorLogFunc m_funcPostErrorInfo;
+		PostErrorLogFunc m_funcPostPerformance;
 	private:
 		bool m_bInited;
 		//读取或修改配置及日志时锁定

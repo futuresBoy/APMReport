@@ -39,3 +39,6 @@
 #define ERROR_CODE_SWITCHOFF		1	//开关关闭
 #define ERROR_CODE_OUTOFCACHE		2	//超出缓存最大条数
 #define ERROR_CODE_LOGREPEATED		3	//日志重复
+
+#define CHECK_ISNULL(x)((x == nullptr) ? true : false)
+#define CHECK_ISNULLOREMPTY(x)((x == nullptr || x[0] == '\0') ? true : false)
