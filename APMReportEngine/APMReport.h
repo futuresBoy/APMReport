@@ -53,15 +53,9 @@ extern "C"
 	typedef void (*LogFunc)(const char* logInfo, LogLevel logLevel);
 
 	/*
-		功能：初始化日志输出
-		参数：funcLog 内部日志输出通知
-		返回值：0 成功，-1 异常
-	*/
-	APM_REPORT_API int32_t InitLogger(LogFunc funcLog);
-
-	/*
-		功能：SDK初始化（包含初始化日志InitLogger）
+		功能：SDK初始化
 		参数：funcPostErrorLog 通知上传错误信息
+		参数：funcPostPerformance 通知上传性能信息
 		参数：funcLog 内部日志输出通知
 		返回值：0 成功，-1 异常
 	*/
@@ -91,12 +85,14 @@ extern "C"
 
 	/*
 		功能：设置阈值配置
+		参数：json 阈值配置接口的json数据
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t SetReportConfig(const char* json);
 
 	/*
 		功能：设置开关
+		参数：json 开关配置接口的json数据
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
 	APM_REPORT_API int32_t SetReportSwitch(const char* json);

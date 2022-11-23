@@ -26,7 +26,7 @@ namespace APMReport
 	{
 	public:
 		/*设置用户基础信息*/
-		static int SetUserInfo(const char* sUserID, const char* sUserName, const char* sUserAccount);
+		static int SetUserInfo(const char* sAppID, const char* sUserID, const char* sUserName, const char* sUserAccount);
 		/*获取用户基础信息*/
 		static UserInfo GetUserInfo();
 		/*设置扩展的用户基础信息*/

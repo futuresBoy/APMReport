@@ -21,7 +21,7 @@ namespace APMReport
 	{
 	}
 
-	std::string APMCryptogram::MD5(std::string msg)
+	std::string APMCryptogram::MD5(const std::string& msg)
 	{
 		if (msg.empty())
 		{
@@ -76,7 +76,7 @@ namespace APMReport
 		return 0;
 	}
 
-	std::string APMCryptogram::RSAEncrypt(std::string plain)
+	std::string APMCryptogram::RSAEncrypt(const std::string& plain)
 	{
 		AutoSeededRandomPool randPool;
 		std::string cipher;
@@ -123,18 +123,6 @@ namespace APMReport
 			}
 		}
 		return ret;
-	}
-
-	int APMCryptogram::AesEncrypt(const char* plainText, char* cipherText, int& outLen)
-	{
-		std::string cipherStr;
-		int result = AesEncrypt(plainText, cipherStr);
-		if (result != 0)
-		{
-			return ERROR_CODE_DATA_ENCRYPT;
-		}
-		outLen = cipherStr.length();
-		memcpy(cipherText, cipherStr.c_str(), outLen);
 	}
 
 	int APMCryptogram::AesEncrypt(std::string plainText, std::string& cipherBase64)

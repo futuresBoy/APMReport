@@ -42,7 +42,7 @@ namespace APMReport
 			参数：msg 需要进行MD5的字符串
 			返回值：MD5后的字符串
 		*/
-		static std::string MD5(std::string msg);
+		static std::string MD5(const std::string& msg);
 
 		/*
 			功能：设置RSA公钥
@@ -70,16 +70,7 @@ namespace APMReport
 			参数：plain 待加密的明文
 			返回值：加密后的密文
 		*/
-		static std::string RSAEncrypt(std::string plain);
-
-		/*
-			功能：使用AES(CBC模式)加密
-			参数：plainText 待加密的明文字符串
-			参数：cipherText 输出的密文（base64编码）
-			参数：outLen 输出的密文长度
-			返回值：0 成功，-1 加密失败
-		*/
-		static int AesEncrypt(const char* plainText, char* cipherText, int& outLen);
+		static std::string RSAEncrypt(const std::string& plain);
 
 		/*
 			功能：使用AES(CBC模式)加密

@@ -221,7 +221,7 @@ APM_REPORT_API int SetUserInfo(const char* appID, const char* userID, const char
 	{
 		return ERROR_CODE_PARAMS;
 	}
-	return User::SetUserInfo(userID, userName, userAccount);
+	return User::SetUserInfo(appID, userID, userName, userAccount);
 }
 
 
@@ -343,5 +343,5 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 
 APM_REPORT_API int32_t Close()
 {
-	return -1;
+	return 0;
 }

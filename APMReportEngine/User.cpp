@@ -1,14 +1,15 @@
 #include "User.h"
 #include "APMBasic.h"
+#include "Logger.h"
 #include <string>
 #include "json/json.h"
 
 
 namespace APMReport
 {
-	int User::SetUserInfo(const char* sUserID, const char* sUserName, const char* sUserAccount)
+	int User::SetUserInfo(const char* sAppID, const char* sUserID, const char* sUserName, const char* sUserAccount)
 	{
-		if (nullptr == sUserID || sUserID == "")
+		if (CHECK_ISNULLOREMPTY(sUserID))
 		{
 			return ERROR_CODE_PARAMS;
 		}
@@ -45,13 +46,21 @@ namespace APMReport
 		{
 			return ERROR_CODE_PARAMS;
 		}
-		Json::Value root;
-		Json::Reader reader;
-		if (!reader.parse(msg, root))
+		try
 		{
+			Json::Value root;
+			Json::Reader reader;
+			if (!reader.parse(msg, root))
+			{
+				return ERROR_CODE_DATA_JSON;
+			}
+			g_jsonUserInfo = root;
+		}
+		catch (const std::exception& e)
+		{
+			LOGERROR(e.what());
 			return ERROR_CODE_DATA_JSON;
 		}
-		g_jsonUserInfo = root;
 		return 0;
 	}
 

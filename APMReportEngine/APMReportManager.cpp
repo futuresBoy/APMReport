@@ -216,7 +216,7 @@ namespace APMReport
 
 	bool ReportPerformanceTask::LoadThresholdConfig(const Json::Value& root)
 	{
-		return false;
+		return true;
 	}
 
 
@@ -358,39 +358,48 @@ namespace APMReport
 
 	int TaskManager::GenerateRoot(const std::string& msg, Json::Value& root)
 	{
+		//上层未传信息，不作处理，正常返回
 		if (msg.empty())
 		{
 			return 0;
 		}
-		//区分普通字符串和Json字符串
-		if (msg[0] != '{')
+		try
 		{
-			root["msg"] = msg;
-		}
-		else
-		{
-			Json::Reader reader;
-			if (!reader.parse(msg, root))
+			//区分普通字符串和Json字符串
+			if (msg[0] != '{')
 			{
-				return ERROR_CODE_DATA_JSON;
+				root["msg"] = msg;
+			}
+			else
+			{
+				Json::Reader reader;
+				if (!reader.parse(msg, root))
+				{
+					return ERROR_CODE_DATA_JSON;
+				}
+			}
+			//赋值用户信息
+			auto userInfoEx = User::GetUserInfoEx();
+			if (userInfoEx.empty())
+			{
+				auto userInfo = User::GetUserInfo();
+				root["userId"] = userInfo.m_sUserID;
+			}
+			else
+			{
+				Json::Value::Members member = userInfoEx.getMemberNames();
+				for (Json::Value::Members::iterator iter = member.begin(); iter != member.end(); ++iter)
+				{
+					std::string name = *iter;
+					std::string value = userInfoEx[name].asString();
+					root[name] = value;
+				}
 			}
 		}
-		//赋值用户信息
-		auto userInfoEx = User::GetUserInfoEx();
-		if (userInfoEx.empty())
+		catch (const std::exception & e)
 		{
-			auto userInfo = User::GetUserInfo();
-			root["userId"] = userInfo.m_sUserID;
-		}
-		else
-		{
-			Json::Value::Members member = userInfoEx.getMemberNames();
-			for (Json::Value::Members::iterator iter = member.begin(); iter != member.end(); ++iter)
-			{
-				std::string name = *iter;
-				std::string value = userInfoEx[name].asString();
-				root[name] = value;
-			}
+			LOGERROR(e.what());
+			return ERROR_CODE_INNEREXCEPTION;
 		}
 		return 0;
 	}
@@ -409,12 +418,7 @@ namespace APMReport
 			{
 				continue;
 			}
-			if (task.m_config.m_bSendImmediately)
-			{
-				UploadErrorLogData();
-				interval = 0;
-			}
-			if (interval >= task.m_config.m_nSendMaxInterval)
+			if (task.m_config.m_bSendImmediately || interval >= task.m_config.m_nSendMaxInterval)
 			{
 				UploadErrorLogData();
 				interval = 0;
@@ -440,12 +444,7 @@ namespace APMReport
 			{
 				continue;
 			}
-			if (task.m_config.m_bSendImmediately)
-			{
-				UploadPerformanceData();
-				interval = 0;
-			}
-			if (interval >= task.m_config.m_nSendMaxInterval)
+			if (task.m_config.m_bSendImmediately || interval >= task.m_config.m_nSendMaxInterval)
 			{
 				UploadPerformanceData();
 				interval = 0;
