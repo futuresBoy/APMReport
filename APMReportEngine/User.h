@@ -9,17 +9,16 @@ namespace APMReport
 {
 	struct UserInfo
 	{
-		std::string m_appID;
 		std::string m_sUserID;
 		std::string m_sUserName;
 		std::string m_sUserAccount;
 	};
 
 	//当前用户信息
-	static UserInfo g_userInfo;
+	static std::map<std::string, UserInfo> g_mapUserInfo;
 
 	//扩展的用户信息
-	static Json::Value g_jsonUserInfo;
+	static std::map<std::string, Json::Value> g_jsonUserInfo;
 
 	/*用户信息*/
 	class User
@@ -28,10 +27,10 @@ namespace APMReport
 		/*设置用户基础信息*/
 		static int SetUserInfo(const char* sAppID, const char* sUserID, const char* sUserName, const char* sUserAccount);
 		/*获取用户基础信息*/
-		static UserInfo GetUserInfo();
+		static UserInfo GetUserInfo(std::string appID);
 		/*设置扩展的用户基础信息*/
-		static int SetUserInfoEx(std::string msg);
-		static Json::Value GetUserInfoEx();
+		static int SetUserInfoEx(std::string appID, std::string msg);
+		static Json::Value GetUserInfoEx(std::string appID);
 	};
 }
 

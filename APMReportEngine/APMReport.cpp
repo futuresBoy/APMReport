@@ -21,7 +21,7 @@ APM_REPORT_API int InitLogger(LogFunc funcLog)
 APM_REPORT_API int APMInit(PostErrorLogFunc funcPostErrorLog, PostPerformanceFunc funcPostPerformance, LogFunc funcLog)
 {
 	InitLog(funcLog);
-	return TaskManager::GetInstance().APMInit(funcPostErrorLog, funcPostPerformance);
+	return APMReportManager::APMInit(funcPostErrorLog, funcPostPerformance);
 }
 
 APM_REPORT_API const char* GetSDKVersion()
@@ -59,7 +59,7 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 			LOGERROR("d_uuid is null or empty.");
 			return ERROR_CODE_DATA_JSON;
 		}
-		ClientManager::SetDeviceUUID(uuid);
+		ClientManager::SetDeviceUUID(appID, uuid);
 		base.removeMember("d_uuid");
 		base["s_ver"] = SDKVERSION;
 
@@ -115,24 +115,34 @@ APM_REPORT_API int SetClientInfo(const char* baseInfo, char* outJosn, int32_t& l
 	return 0;
 }
 
-APM_REPORT_API int SetReportConfig(const char* msg)
+APM_REPORT_API int SetReportConfig(const char* appID, const char* msg)
 {
+	if (CHECK_ISNULLOREMPTY(appID))
+	{
+		LOGERROR("appID is null or empty.");
+		return ERROR_CODE_PARAMS;
+	}
 	if (CHECK_ISNULLOREMPTY(msg))
 	{
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().LoadThresholdConfig(msg);
+	return APMReportManager::Get(appID).LoadThresholdConfig(msg);
 }
 
-APM_REPORT_API int SetReportSwitch(const char* msg)
+APM_REPORT_API int SetReportSwitch(const char* appID, const char* msg)
 {
+	if (CHECK_ISNULLOREMPTY(appID))
+	{
+		LOGERROR("appID is null or empty.");
+		return ERROR_CODE_PARAMS;
+	}
 	if (CHECK_ISNULLOREMPTY(msg))
 	{
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
 	}
-	return TaskManager::GetInstance().LoadSwitch(msg);
+	return APMReportManager::Get(appID).LoadSwitch(msg);
 }
 
 APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
@@ -233,7 +243,7 @@ APM_REPORT_API int SetUserInfoEx(const char* appID, const char* userInfo)
 	}
 	try
 	{
-		return User::SetUserInfoEx(ConvertUTF8(userInfo));
+		return User::SetUserInfoEx(appID, ConvertUTF8(userInfo));
 	}
 	catch (const std::exception & e)
 	{
@@ -266,7 +276,7 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 		}
 
 		std::string strMsg = ConvertUTF8(msg);
-		int result = TaskManager::GetInstance().AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
+		int result = APMReportManager::Get(appID).AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
 
 #ifdef _DEBUG
 		std::string sType(logType);
@@ -301,7 +311,7 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 			return ERROR_CODE_NULLCLIENTINFO;
 		}
 
-		return TaskManager::GetInstance().AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
+		return APMReportManager::Get(appID).AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
 	}
 	catch (const std::exception & e)
 	{
@@ -341,7 +351,14 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 	}
 }
 
-APM_REPORT_API int32_t Close()
+APM_REPORT_API int32_t Close(const char* appID)
 {
-	return 0;
+	int result = APMReportManager::Close(appID);
+	return result ? 0 : ERROR_CODE_INNEREXCEPTION;
+}
+
+APM_REPORT_API int32_t CloseAll()
+{
+	int result = APMReportManager::Close();
+	return result ? 0 : ERROR_CODE_INNEREXCEPTION;
 }

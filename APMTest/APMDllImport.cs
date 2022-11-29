@@ -92,7 +92,7 @@ namespace APMTestDemo
         /// <param name="json"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int SetReportConfig(string json);
+        public static extern int SetReportConfig(string appID, string json);
 
         /// <summary>
         /// 设置开关配置
@@ -100,7 +100,7 @@ namespace APMTestDemo
         /// <param name="json"></param>
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int SetReportSwitch(string json);
+        public static extern int SetReportSwitch(string appID, string json);
 
 
         /// <summary>
@@ -153,6 +153,22 @@ namespace APMTestDemo
         /// <returns></returns>
         [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int AddHTTPLog(string appID, string logType, string moduleName, string url, string errorCode, int costTime, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string data, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(UTF8Marshaler))]string extData);
+
+
+        /// <summary>
+        /// 关闭SDK上报
+        /// </summary>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int Close(string appID);
+
+        /// <summary>
+        /// 关闭SDK上报
+        /// </summary>
+        /// <returns></returns>
+        [DllImport(dllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int CloseAll();
+
     }
 
     //接口数据为utf-8编码所设置

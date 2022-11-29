@@ -48,14 +48,14 @@ namespace APMTestDemo
             //测试地址
             string configUrl = $"https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_threshold_config?app_id={baseInfo.app_id}&a_ver_app={baseInfo.a_ver_app}&s_ver={versionStr}&d_uuid={baseInfo.d_uuid}";
             string ss = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"pub_key_id\":\"1b891e80c0b4cd56a08e2d394a8e31c8\",\"pub_key\":\"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQD04nj3/4ynPzu28kRh7q83SReo34wKwgaffUm/PfjemtYdcB0LvOwQl74tC2i8pDhvSHMf5mx0USSbr9hQLHp30ubn18oVVyVK2dFsmj1pJylGw2Yw6TnFR/qUfJTA7YteFPVh2ADNc+G9tsA/7SbRiTB3P72zkTB1rnrT+hdILQIDAQAB\",\"configs\":[{\"module\":\"http\",\"config\":\"{\\\"sampling_rate\\\":\\\"500\\\",\\\"type\\\":\\\"2\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"slow_load_threshold\\\":\\\"1\\\"}\"},{\"module\":\"base\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\"}\"},{\"module\":\"web\",\"config\":\"{\\\"sampling_rate\\\":\\\"1000\\\",\\\"interval\\\":\\\"10\\\",\\\"aggre_time\\\":\\\"60\\\",\\\"aggre_count\\\":\\\"100\\\",\\\"type\\\":\\\"3\\\",\\\"white_screen_threshold\\\":\\\"95\\\",\\\"slow_load_threshold\\\":\\\"3\\\"}\"}]}}";
-            int configResult = APMDllImport.SetReportConfig(ss);
+            int configResult = APMDllImport.SetReportConfig(baseInfo.app_id, ss);
             Console.WriteLine("SetReportConfig: " + configResult);
-
+            APMDllImport.SetReportConfig(baseInfo.app_id, ss);
             //2.3 设置开关
             //测试地址：
             string switchUrl = $"https://khtest.10jqka.com.cn/apm-nginx/apm-api/apm/v1/get_switch_config?app_id={baseInfo.app_id}&a_ver_app={baseInfo.a_ver_app}&s_ver={versionStr}&d_uuid={baseInfo.d_uuid}";
             string switchMsg = "{\"status_code\":0,\"status_msg\":\"success\",\"data\":{\"app_id\":\"all\",\"a_ver_app\":\"all\",\"s_ver\":\"all\",\"d_uuid\":\"all\",\"switch\":1,\"gather_switch\":127,\"up_switch\":127}}";
-            int switchResult = APMDllImport.SetReportSwitch(switchMsg);
+            int switchResult = APMDllImport.SetReportSwitch(baseInfo.app_id, switchMsg);
             Console.WriteLine("SetReportSwitch: " + switchResult);
 
             //3.设置基础数据
@@ -114,6 +114,9 @@ namespace APMTestDemo
                 httpLog = APMDllImport.AddHTTPLog(baseInfo.app_id, "", "ClassDemo", "https://ftapi.10jqka.com.cn/ljapi/futures/contract/basic", "", 300, "期货品种接口", "");
             }
             Console.WriteLine("AddHTTPLog: " + httpLog);
+
+            APMDllImport.Close(baseInfo.app_id);
+            APMDllImport.CloseAll();
         }
 
         /// <summary>

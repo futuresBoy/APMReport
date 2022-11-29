@@ -33,9 +33,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="APMReportManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="json\json.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
@@ -57,6 +54,12 @@
     <ClInclude Include="ClientManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="APMReportProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="APMReportManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="APMReport.cpp">
@@ -66,9 +69,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="APMReportManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APMCryptogram.cpp">
@@ -84,6 +84,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ClientManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APMReportProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APMReportManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

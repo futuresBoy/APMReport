@@ -6,7 +6,7 @@ namespace APMReport
 {
 	std::string APMCryptogram::g_AESKey;
 	std::string APMCryptogram::g_cipherAESKey;
-
+	static bool g_bInited = false;
 
 	//（服务端）默认密钥编号
 	static std::string g_keyID = "6758ae5bcabf52bf1016a6803b846db5";
@@ -15,6 +15,7 @@ namespace APMReport
 
 	APMCryptogram::APMCryptogram()
 	{
+
 	}
 
 	APMCryptogram::~APMCryptogram()
@@ -59,6 +60,11 @@ namespace APMReport
 			LOGERROR("rsa public key is empty!");
 			return ERROR_CODE_PARAMS;
 		}
+		//公钥只需初始化一次
+		if (g_bInited)
+		{
+			return true;
+		}
 
 		std::string pubKeyID(keyID);
 		g_keyID = pubKeyID;
@@ -73,6 +79,7 @@ namespace APMReport
 			return ERROR_CODE_DATA_ENCRYPT;
 		}
 		g_cipherAESKey = cipherText;
+		g_bInited = true;
 		return 0;
 	}
 

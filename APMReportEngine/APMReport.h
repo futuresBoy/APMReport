@@ -88,14 +88,14 @@ extern "C"
 		参数：json 阈值配置接口的json数据
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t SetReportConfig(const char* json);
+	APM_REPORT_API int32_t SetReportConfig(const char* appID, const char* json);
 
 	/*
 		功能：设置开关
 		参数：json 开关配置接口的json数据
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t SetReportSwitch(const char* json);
+	APM_REPORT_API int32_t SetReportSwitch(const char* appID, const char* json);
 
 	/*
 		功能：设置RSA公钥
@@ -152,14 +152,14 @@ extern "C"
 		参数：extData 扩展字段（指定Json格式）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddErrorLog(const char* appID, 
-									const char* module, 
-									const char* logType, 
-									const char* bussiness, 
-									const char* subName, 
-									const char* errorCode, 
-									const char* msg, 
-									const char* extData);
+	APM_REPORT_API int32_t AddErrorLog(const char* appID,
+		const char* module,
+		const char* logType,
+		const char* bussiness,
+		const char* subName,
+		const char* errorCode,
+		const char* msg,
+		const char* extData);
 
 	/*
 		功能：记录HTTP异常日志
@@ -173,14 +173,14 @@ extern "C"
 		参数：extData 扩展字段（Json格式）
 		返回值：0 成功，-1 参数异常，-3 内部异常
 	*/
-	APM_REPORT_API int32_t AddHTTPLog(const char* appID, 
-									const char* logType, 
-									const char* bussiness, 
-									const char* url, 
-									const char* errorCode, 
-									int32_t costTime, 
-									const char* msg, 
-									const char* extData);
+	APM_REPORT_API int32_t AddHTTPLog(const char* appID,
+		const char* logType,
+		const char* bussiness,
+		const char* url,
+		const char* errorCode,
+		int32_t costTime,
+		const char* msg,
+		const char* extData);
 
 	/*
 		功能：获取链路追踪ID的Header,用于客户端提供TradeID给其他业务方
@@ -193,9 +193,14 @@ extern "C"
 	APM_REPORT_API int32_t GetHttpHeader(const char* traceID, char* outBuffer, int32_t& length);
 
 	/*
-		功能：关闭
+		功能：关闭指定appID的日志上报
 	*/
-	APM_REPORT_API int32_t Close();
+	APM_REPORT_API int32_t Close(const char* appID);
+
+	/*
+		功能：关闭所有的日志上报
+	*/
+	APM_REPORT_API int32_t CloseAll();
 
 }
 #endif // __cplusplus

@@ -9,19 +9,20 @@ namespace APMReport
 {
 	int User::SetUserInfo(const char* sAppID, const char* sUserID, const char* sUserName, const char* sUserAccount)
 	{
-		if (CHECK_ISNULLOREMPTY(sUserID))
+		if (CHECK_ISNULLOREMPTY(sAppID) || CHECK_ISNULLOREMPTY(sUserID))
 		{
 			return ERROR_CODE_PARAMS;
 		}
 		std::string userID(sUserID);
-		g_userInfo.m_sUserID = userID;
+		UserInfo user;
+		user.m_sUserID = userID;
 
 		if (nullptr != sUserName)
 		{
 			std::string userName(sUserName);
 			if (userName.length() > 1)
 			{
-				g_userInfo.m_sUserName = userName;
+				user.m_sUserName = userName;
 			}
 		}
 		if (nullptr != sUserAccount)
@@ -29,18 +30,29 @@ namespace APMReport
 			std::string userAccount(sUserAccount);
 			if (userAccount.length() > 1)
 			{
-				g_userInfo.m_sUserAccount = userAccount;
+				user.m_sUserAccount = userAccount;
 			}
 		}
+		g_mapUserInfo.insert_or_assign(sAppID, user);
 		return 0;
 	}
 
-	UserInfo User::GetUserInfo()
+	UserInfo User::GetUserInfo(std::string appID)
 	{
-		return g_userInfo;
+		UserInfo user;
+		if (appID.empty())
+		{
+			return user;
+		}
+		auto iter = g_mapUserInfo.find(appID);
+		if (iter == g_mapUserInfo.end())
+		{
+			return user;
+		}
+		return iter->second;
 	}
 
-	int User::SetUserInfoEx(std::string msg)
+	int User::SetUserInfoEx(std::string appID, std::string msg)
 	{
 		if (msg.empty())
 		{
@@ -54,9 +66,9 @@ namespace APMReport
 			{
 				return ERROR_CODE_DATA_JSON;
 			}
-			g_jsonUserInfo = root;
+			g_jsonUserInfo.insert_or_assign(appID, root);
 		}
-		catch (const std::exception& e)
+		catch (const std::exception & e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_DATA_JSON;
@@ -64,9 +76,18 @@ namespace APMReport
 		return 0;
 	}
 
-	Json::Value User::GetUserInfoEx()
+	Json::Value User::GetUserInfoEx(std::string appID)
 	{
-		return g_jsonUserInfo;
+		if (appID.empty())
+		{
+			return new Json::Value();
+		}
+		auto iter = g_jsonUserInfo.find(appID);
+		if (iter == g_jsonUserInfo.end())
+		{
+			return new Json::Value();
+		}
+		return iter->second;
 	}
 
 }
