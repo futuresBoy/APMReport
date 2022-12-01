@@ -127,7 +127,7 @@ APM_REPORT_API int SetReportConfig(const char* appID, const char* msg)
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
 	}
-	return APMReportManager::Get(appID).LoadThresholdConfig(msg);
+	return APMReportManager::Get(appID)->LoadThresholdConfig(msg);
 }
 
 APM_REPORT_API int SetReportSwitch(const char* appID, const char* msg)
@@ -142,7 +142,7 @@ APM_REPORT_API int SetReportSwitch(const char* appID, const char* msg)
 		LOGERROR("message is null or empty.");
 		return ERROR_CODE_PARAMS;
 	}
-	return APMReportManager::Get(appID).LoadSwitch(msg);
+	return APMReportManager::Get(appID)->LoadSwitch(msg);
 }
 
 APM_REPORT_API int SetRSAPubKey(const char* pubKeyID, const char* pubKey)
@@ -276,7 +276,7 @@ APM_REPORT_API int AddErrorLog(const char* appID, const char* module, const char
 		}
 
 		std::string strMsg = ConvertUTF8(msg);
-		int result = APMReportManager::Get(appID).AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
+		int result = APMReportManager::Get(appID)->AddTraceLog(module, logType, bussiness, subName, errorCode, strMsg, extData);
 
 #ifdef _DEBUG
 		std::string sType(logType);
@@ -311,7 +311,7 @@ APM_REPORT_API int AddHTTPLog(const char* appID, const char* logType, const char
 			return ERROR_CODE_NULLCLIENTINFO;
 		}
 
-		return APMReportManager::Get(appID).AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
+		return APMReportManager::Get(appID)->AddHTTPLog(logType, bussiness, url, errorCode, costTime, ConvertUTF8(msg), extData);
 	}
 	catch (const std::exception & e)
 	{

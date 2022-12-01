@@ -4,8 +4,11 @@
 
 namespace APMReport
 {
+	//随机生成的AES密钥
 	std::string APMCryptogram::g_AESKey;
+	//RSA公钥加密后的AES密钥
 	std::string APMCryptogram::g_cipherAESKey;
+	//密钥是否已初始化
 	static bool g_bInited = false;
 
 	//（服务端）默认密钥编号

@@ -2,7 +2,7 @@
 
 namespace APMReport
 {
-	std::map<std::string, APMReport::TaskProcess&> APMReportManager::g_manager;
+	std::map<std::string, TaskProcess*> APMReportManager::g_manager;
 
 	static bool m_bInited;
 	static PostErrorLogFunc m_funcPostErrorInfo;
@@ -31,16 +31,16 @@ namespace APMReport
 		return iter == g_manager.end() ? false : true;
 	}
 
-	TaskProcess& APMReportManager::Get(std::string appID)
+	TaskProcess* APMReportManager::Get(std::string appID)
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
 		auto iter = g_manager.find(appID);
 		if (iter == g_manager.end())
 		{
-			static TaskProcess manager;
-			manager.Init(appID, m_funcPostErrorInfo, m_funcPostPerformance);
-			g_manager.insert_or_assign(appID, manager);
-			return manager;
+			auto process = new TaskProcess();
+			process->Init(appID, m_funcPostErrorInfo, m_funcPostPerformance);
+			g_manager.insert_or_assign(appID, process);
+			return process;
 		}
 		return iter->second;
 	}
@@ -75,7 +75,8 @@ namespace APMReport
 		auto iter = g_manager.find(appID);
 		if (iter != g_manager.end())
 		{
-			iter->second.Stop();
+			iter->second->Stop();
+			delete iter->second;
 			g_manager.erase(iter);
 		}
 		return true;
@@ -84,9 +85,10 @@ namespace APMReport
 	bool APMReportManager::Close()
 	{
 		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
-		for (auto& t : g_manager)
+		for (auto t : g_manager)
 		{
-			t.second.Stop();
+			t.second->Stop();
+			delete t.second;
 		}
 		g_manager.clear();
 		return true;

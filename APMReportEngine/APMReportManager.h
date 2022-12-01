@@ -12,7 +12,7 @@ namespace APMReport
 	{
 	private:
 		//存放不同appID对应的日志上报任务
-		static std::map<std::string, APMReport::TaskProcess&> g_manager;
+		static std::map<std::string, TaskProcess*> g_manager;
 
 	public:
 		APMReportManager();
@@ -22,7 +22,7 @@ namespace APMReport
 		static bool Exist(std::string appID);
 
 		/*获取appID对应的日志上报任务*/
-		static TaskProcess& Get(std::string appID);
+		static TaskProcess* Get(std::string appID);
 
 		/*1.初始化*/
 		static int APMInit(
