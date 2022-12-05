@@ -4,41 +4,41 @@ namespace APMReport
 {
 	std::map<std::string, TaskProcess*> APMReportManager::g_manager;
 
-	static bool m_bInited;
-	static PostErrorLogFunc m_funcPostErrorInfo;
-	static PostErrorLogFunc m_funcPostPerformance;
+	static bool g_bInited;
+	static PostErrorLogFunc g_funcPostErrorInfo;
+	static PostErrorLogFunc g_funcPostPerformance;
 
-	std::recursive_mutex m_reportMutex;
+	std::recursive_mutex g_reportMutex;
 
 	APMReportManager::APMReportManager()
 	{
-		m_bInited = false;
-		m_funcPostErrorInfo = nullptr;
-		m_funcPostPerformance = nullptr;
+		g_bInited = false;
+		g_funcPostErrorInfo = nullptr;
+		g_funcPostPerformance = nullptr;
 	}
 
 	APMReportManager::~APMReportManager()
 	{
-		m_bInited = false;
-		m_funcPostErrorInfo = nullptr;
-		m_funcPostPerformance = nullptr;
+		g_bInited = false;
+		g_funcPostErrorInfo = nullptr;
+		g_funcPostPerformance = nullptr;
 	}
 
 	bool APMReportManager::Exist(std::string appID)
 	{
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		auto iter = g_manager.find(appID);
 		return iter == g_manager.end() ? false : true;
 	}
 
 	TaskProcess* APMReportManager::Get(std::string appID)
 	{
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		auto iter = g_manager.find(appID);
 		if (iter == g_manager.end())
 		{
 			auto process = new TaskProcess();
-			process->Init(appID, m_funcPostErrorInfo, m_funcPostPerformance);
+			process->Init(appID, g_funcPostErrorInfo, g_funcPostPerformance);
 			g_manager.insert_or_assign(appID, process);
 			return process;
 		}
@@ -52,14 +52,14 @@ namespace APMReport
 			LOGERROR("PostErrorLogFunc or PostPerformanceFunc is Null.");
 			return ERROR_CODE_PARAMS;
 		}
-		m_funcPostErrorInfo = funcPostErrorInfo;
-		m_funcPostPerformance = funcPostPerformance;
-		if (m_bInited)
+		g_funcPostErrorInfo = funcPostErrorInfo;
+		g_funcPostPerformance = funcPostPerformance;
+		if (g_bInited)
 		{
 			LOGWARN("Inited Aready!");
 			return 0;
 		}
-		m_bInited = true;
+		g_bInited = true;
 
 		LOGINFO("Init finished!");
 		return 0;
@@ -71,7 +71,7 @@ namespace APMReport
 		{
 			return false;
 		}
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		auto iter = g_manager.find(appID);
 		if (iter != g_manager.end())
 		{
@@ -84,7 +84,7 @@ namespace APMReport
 
 	bool APMReportManager::Close()
 	{
-		std::lock_guard<std::recursive_mutex> lck(m_reportMutex);
+		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		for (auto t : g_manager)
 		{
 			t.second->Stop();

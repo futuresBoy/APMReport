@@ -25,7 +25,7 @@ namespace APMReport
 	APMReport::TaskProcess::~TaskProcess()
 	{
 		m_bThreadExit = true;
-		if (m_pThreadErrorLog != nullptr)
+		if (nullptr != m_pThreadErrorLog)
 		{
 			if (m_pThreadErrorLog->joinable())
 			{
@@ -34,7 +34,7 @@ namespace APMReport
 			delete m_pThreadErrorLog;
 			m_pThreadErrorLog = nullptr;
 		}
-		if (m_pThreadPerformance != nullptr)
+		if (nullptr != m_pThreadPerformance)
 		{
 			if (m_pThreadPerformance->joinable())
 			{
@@ -68,17 +68,12 @@ namespace APMReport
 			int result = GetResponseData(msg, data);
 			if (result != 0)
 			{
-				return ERROR_CODE_DATA_JSON;
+				return result;
 			}
 			//设置程序的RSA公钥
 			std::string pubKeyID = data["pub_key_id"].asString();
 			std::string pubKey = data["pub_key"].asString();
-			result = APMReport::APMCryptogram::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
-			if (result != 0)
-			{
-				return result;
-			}
-
+			return APMReport::APMCryptogram::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
 		}
 		catch (const std::exception & e)
 		{
@@ -132,7 +127,7 @@ namespace APMReport
 			Json::Reader reader;
 			if (!reader.parse(msg, root))
 			{
-				LOGERROR("Parse ResponseData to json failed!");
+				LOGERROR("Parse ResponseData to json failed! %s", msg);
 				return ERROR_CODE_DATA_JSON;
 			}
 
@@ -148,6 +143,7 @@ namespace APMReport
 		catch (const std::exception & e)
 		{
 			LOGERROR(e.what());
+			LOGINFO(msg);
 			return ERROR_CODE_DATA_JSON;
 		}
 		return 0;
@@ -167,8 +163,7 @@ namespace APMReport
 			int allSwitch = root["switch"].asInt();
 			if (allSwitch == 0)
 			{
-				this->m_bCollectSwitch = false;
-				this->m_bReportSwitch = false;
+				this->m_bCollectSwitch = this->m_bReportSwitch = false;
 				return true;
 			}
 			int gatherSwitch = root["gather_switch"].asInt();
@@ -186,19 +181,11 @@ namespace APMReport
 		catch (const std::exception & e)
 		{
 			LOGERROR(e.what());
+			//记录解析异常的json
+			Json::FastWriter writer;
+			LOGINFO(writer.write(root).c_str());
 			return false;
 		}
-		return true;
-	}
-
-	bool ReportErrorTask::LoadThresholdConfig(const Json::Value& root)
-	{
-		return true;
-	}
-
-
-	bool ReportPerformanceTask::LoadThresholdConfig(const Json::Value& root)
-	{
 		return true;
 	}
 
@@ -304,7 +291,7 @@ namespace APMReport
 
 			m_veclogMsgs.push_back(root);
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGFATAL(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -379,7 +366,7 @@ namespace APMReport
 				}
 			}
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_INNEREXCEPTION;

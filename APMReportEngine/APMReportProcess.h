@@ -88,8 +88,6 @@ namespace APMReport
 	public:
 		ReportErrorTask() { m_taskType = TaskType_ReportError; };
 		~ReportErrorTask() {};
-	public:
-		bool LoadThresholdConfig(const Json::Value& root);
 	};
 
 	/*
@@ -99,8 +97,7 @@ namespace APMReport
 	{
 	public:
 		ReportPerformanceTask() { m_taskType = TaskType_ReportPerformance; };
-	public:
-		bool LoadThresholdConfig(const Json::Value& root);
+		~ReportPerformanceTask() {};
 	};
 
 	/*

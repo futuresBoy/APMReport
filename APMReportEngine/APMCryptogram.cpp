@@ -66,7 +66,7 @@ namespace APMReport
 		//公钥只需初始化一次
 		if (g_bInited)
 		{
-			return true;
+			return 0;
 		}
 
 		std::string pubKeyID(keyID);

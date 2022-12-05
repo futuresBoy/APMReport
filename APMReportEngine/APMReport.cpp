@@ -353,12 +353,14 @@ APM_REPORT_API int GetHttpHeader(const char* traceID, char* outBuffer, int32_t& 
 
 APM_REPORT_API int32_t Close(const char* appID)
 {
-	int result = APMReportManager::Close(appID);
-	return result ? 0 : ERROR_CODE_INNEREXCEPTION;
+	if (CHECK_ISNULLOREMPTY(appID))
+	{
+		return ERROR_CODE_PARAMS;
+	}
+	return APMReportManager::Close(appID) ? 0 : ERROR_CODE_INNEREXCEPTION;
 }
 
 APM_REPORT_API int32_t CloseAll()
 {
-	int result = APMReportManager::Close();
-	return result ? 0 : ERROR_CODE_INNEREXCEPTION;
+	return APMReportManager::Close() ? 0 : ERROR_CODE_INNEREXCEPTION;
 }
