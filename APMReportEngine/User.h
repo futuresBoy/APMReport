@@ -26,11 +26,15 @@ namespace APMReport
 	public:
 		/*设置用户基础信息*/
 		static int SetUserInfo(const char* sAppID, const char* sUserID, const char* sUserName, const char* sUserAccount);
+
 		/*获取用户基础信息*/
-		static UserInfo GetUserInfo(std::string appID);
+		static UserInfo GetUserInfo(const std::string& appID);
+
 		/*设置扩展的用户基础信息*/
-		static int SetUserInfoEx(std::string appID, std::string msg);
-		static Json::Value GetUserInfoEx(std::string appID);
+		static int SetUserInfoEx(const std::string& appID, const std::string& msg);
+
+		/*获取扩展的用户基础信息*/
+		static Json::Value GetUserInfoEx(const std::string& appID);
 	};
 }
 

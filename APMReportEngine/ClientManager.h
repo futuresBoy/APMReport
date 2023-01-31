@@ -8,7 +8,7 @@
 namespace APMReport
 {
 	//各appID对应的设备uuid
-	static std::map<std::string,std::string> g_mapDeviceUUID;
+	static std::map<std::string, std::string> g_mapDeviceUUID;
 	//各appID对应的基础信息
 	static std::map<std::string, std::string> g_mapAppBaseInfoMD5;
 
@@ -17,13 +17,16 @@ namespace APMReport
 	{
 	public:
 		/*获取客户端设备UUID*/
-		static std::string GetDeviceUUID(std::string appID);
-		static void SetDeviceUUID(std::string appID, std::string uuid);
-		/*获取客户端基础信息字典*/
-		static std::map<std::string, std::string> GetBaseInfoMap();
+		static std::string GetDeviceUUID(const std::string& appID);
+
+		/*设置客户端设备UUID*/
+		static void SetDeviceUUID(const std::string& appID, const std::string& uuid);
+
 		/*获取指定appID的客户端基础信息*/
-		static std::string GetBaseInfo(std::string appID);
-		static void SetBaseInfo(std::string appID, std::string baseInfoMD5);
+		static std::string GetBaseInfo(const std::string& appID);
+
+		/*设置指定appID的客户端基础信息*/
+		static void SetBaseInfo(const std::string& appID, const std::string& baseInfoMD5);
 	};
 }
 

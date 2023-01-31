@@ -45,7 +45,7 @@ namespace APMReport
 		}
 	}
 
-	int APMReport::TaskProcess::Init(std::string appID, PostErrorLogFunc funcPostErrorInfo, PostPerformanceFunc funcPostPerformanceInfo)
+	int APMReport::TaskProcess::Init(const std::string& appID, PostErrorLogFunc funcPostErrorInfo, PostPerformanceFunc funcPostPerformanceInfo)
 	{
 		if (nullptr == funcPostErrorInfo || nullptr == funcPostPerformanceInfo)
 		{
@@ -75,7 +75,7 @@ namespace APMReport
 			std::string pubKey = data["pub_key"].asString();
 			return APMReport::APMCryptogram::SetRSAPubKey(pubKeyID.c_str(), pubKey.c_str());
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_INNEREXCEPTION;
@@ -130,7 +130,11 @@ namespace APMReport
 				LOGERROR("Parse ResponseData to json failed! %s", msg);
 				return ERROR_CODE_DATA_JSON;
 			}
-
+			if (!root["status_code"].isInt())
+			{
+				LOGERROR("json error: status_code is not int.");
+				return ERROR_CODE_DATA_JSON;
+			}
 			int statusCode = root["status_code"].asInt();
 			if (statusCode != 0)
 			{
@@ -140,7 +144,7 @@ namespace APMReport
 			}
 			data = root["data"];
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			LOGINFO(msg);
@@ -160,11 +164,21 @@ namespace APMReport
 		{
 			std::string appID = root["app_id"].asCString();
 			//总开关（0：关 1：开）
+			if (!root["switch"].isInt())
+			{
+				LOGERROR("json error: switch is not int.");
+				return false;
+			}
 			int allSwitch = root["switch"].asInt();
 			if (allSwitch == 0)
 			{
 				this->m_bCollectSwitch = this->m_bReportSwitch = false;
 				return true;
+			}
+			if (!root["gather_switch"].isInt())
+			{
+				LOGERROR("json error: gather_switch is not int.");
+				return false;
 			}
 			int gatherSwitch = root["gather_switch"].asInt();
 			if (gatherSwitch == 0)
@@ -172,13 +186,18 @@ namespace APMReport
 				this->m_bCollectSwitch = false;
 			}
 			//上报开关
+			if (!root["up_switch"].isInt())
+			{
+				LOGERROR("json error: up_switch is not int.");
+				return false;
+			}
 			int upSwitch = root["up_switch"].asInt();
 			if (upSwitch == 0)
 			{
 				this->m_bReportSwitch = false;
 			}
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			//记录解析异常的json

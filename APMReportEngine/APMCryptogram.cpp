@@ -135,7 +135,7 @@ namespace APMReport
 		return ret;
 	}
 
-	int APMCryptogram::AesEncrypt(std::string plainText, std::string& cipherBase64)
+	int APMCryptogram::AesEncrypt(const std::string& plainText, std::string& cipherBase64)
 	{
 		std::string cipher;
 		try

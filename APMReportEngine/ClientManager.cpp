@@ -7,7 +7,7 @@
 namespace APMReport
 {
 
-	std::string ClientManager::GetDeviceUUID(std::string appID)
+	std::string ClientManager::GetDeviceUUID(const std::string& appID)
 	{
 		if (appID.empty())
 		{
@@ -21,7 +21,7 @@ namespace APMReport
 		return iter->second;
 	}
 
-	void ClientManager::SetDeviceUUID(std::string appID, std::string uuid)
+	void ClientManager::SetDeviceUUID(const std::string& appID, const std::string& uuid)
 	{
 		if (appID.empty())
 		{
@@ -30,7 +30,7 @@ namespace APMReport
 		g_mapDeviceUUID.insert_or_assign(appID, uuid);
 	}
 
-	std::string ClientManager::GetBaseInfo(std::string appID)
+	std::string ClientManager::GetBaseInfo(const std::string& appID)
 	{
 		if (appID.empty())
 		{
@@ -44,7 +44,7 @@ namespace APMReport
 		return iter->second;
 	}
 
-	void ClientManager::SetBaseInfo(std::string appID, std::string baseInfoMD5)
+	void ClientManager::SetBaseInfo(const std::string& appID, const std::string& baseInfoMD5)
 	{
 		if (appID.empty())
 		{

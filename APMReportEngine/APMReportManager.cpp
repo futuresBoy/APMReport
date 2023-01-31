@@ -24,14 +24,14 @@ namespace APMReport
 		g_funcPostPerformance = nullptr;
 	}
 
-	bool APMReportManager::Exist(std::string appID)
+	bool APMReportManager::Exist(const std::string& appID)
 	{
 		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		auto iter = g_manager.find(appID);
 		return iter == g_manager.end() ? false : true;
 	}
 
-	TaskProcess* APMReportManager::Get(std::string appID)
+	TaskProcess* APMReportManager::Get(const std::string& appID)
 	{
 		std::lock_guard<std::recursive_mutex> lck(g_reportMutex);
 		auto iter = g_manager.find(appID);
@@ -65,7 +65,7 @@ namespace APMReport
 		return 0;
 	}
 
-	bool APMReportManager::Close(std::string appID)
+	bool APMReportManager::Close(const std::string& appID)
 	{
 		if (appID.empty())
 		{

@@ -78,7 +78,7 @@ namespace APMReport
 			参数：cipherStr 输出的密文（base64编码）
 			返回值：0 成功，-1 加密失败
 		*/
-		static int AesEncrypt(std::string plainText, std::string& cipherStr);
+		static int AesEncrypt(const std::string& plainText, std::string& cipherStr);
 
 		/*
 			功能：生成指定长度的随机字符串

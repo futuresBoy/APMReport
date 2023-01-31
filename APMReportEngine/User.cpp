@@ -37,7 +37,7 @@ namespace APMReport
 		return 0;
 	}
 
-	UserInfo User::GetUserInfo(std::string appID)
+	UserInfo User::GetUserInfo(const std::string& appID)
 	{
 		UserInfo user;
 		if (appID.empty())
@@ -52,7 +52,7 @@ namespace APMReport
 		return iter->second;
 	}
 
-	int User::SetUserInfoEx(std::string appID, std::string msg)
+	int User::SetUserInfoEx(const std::string& appID, const std::string& msg)
 	{
 		if (msg.empty())
 		{
@@ -68,7 +68,7 @@ namespace APMReport
 			}
 			g_jsonUserInfo.insert_or_assign(appID, root);
 		}
-		catch (const std::exception & e)
+		catch (const std::exception& e)
 		{
 			LOGERROR(e.what());
 			return ERROR_CODE_DATA_JSON;
@@ -76,7 +76,7 @@ namespace APMReport
 		return 0;
 	}
 
-	Json::Value User::GetUserInfoEx(std::string appID)
+	Json::Value User::GetUserInfoEx(const std::string& appID)
 	{
 		if (appID.empty())
 		{

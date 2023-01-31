@@ -4,7 +4,7 @@
 #include "json/json.h"
 #include "APMReport.h"
 
-//对APM上报的数据进行管理
+//对上报APM的数据进行处理
 namespace APMReport
 {
 	/*
@@ -114,7 +114,7 @@ namespace APMReport
 		}
 	public:
 		/*1.初始化日志上报*/
-		int Init(std::string appID, PostErrorLogFunc funcPostErrorInfo, PostPerformanceFunc funcPostPerformanceInfo);
+		int Init(const std::string& appID, PostErrorLogFunc funcPostErrorInfo, PostPerformanceFunc funcPostPerformanceInfo);
 
 		/*2.加载阈值配置*/
 		int LoadThresholdConfig(const char* msg);

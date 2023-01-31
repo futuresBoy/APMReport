@@ -19,10 +19,10 @@ namespace APMReport
 		~APMReportManager();
 
 		/*判断该appID是否有对应的日志上报任务*/
-		static bool Exist(std::string appID);
+		static bool Exist(const std::string& appID);
 
 		/*获取appID对应的日志上报任务*/
-		static TaskProcess* Get(std::string appID);
+		static TaskProcess* Get(const std::string& appID);
 
 		/*1.初始化*/
 		static int APMInit(
@@ -31,7 +31,7 @@ namespace APMReport
 		);
 
 		/*关闭指定appID的日志上报*/
-		static bool Close(std::string appID);
+		static bool Close(const std::string& appID);
 
 		/*关闭所有的日志上报*/
 		static bool Close();
